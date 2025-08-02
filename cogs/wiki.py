@@ -32,7 +32,7 @@ class Wiki(commands.Cog):
             return
         msg = ""
         for query in res:
-            result = self.bot.wiki.search(query[1] if query[1] != "" else query[3])
+            result = self.bot.wiki.page_search(query[1] if query[1] != "" else query[3])
             msg += f"<{result.url}>\n" if query[1] != "" else f"{result.url}\n"
         await payload.channel.send(msg, mention_author=False)
 
