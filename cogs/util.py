@@ -122,6 +122,8 @@ class Util(commands.Cog):
         if not name.isalnum():
             raise commands.UserInputError
 
+        # TODO: prevent empty messages being saved as tags
+
         async def make_tag(tag_name: str, content: str, aliases=None):
             if aliases is None:
                 aliases = []
