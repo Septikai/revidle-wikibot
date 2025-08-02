@@ -6,7 +6,7 @@ class TextInputModal(discord.ui.Modal):
         super().__init__(title=title)
 
         self.text = None
-        self.text_input = discord.ui.TextInput(label=label, placeholder=placeholder, required=False,
+        self.text_input = discord.ui.TextInput(label=label, placeholder=placeholder, required=True,
                                                style=discord.TextStyle.long if long else discord.TextStyle.short)
         self.add_item(self.text_input)
 

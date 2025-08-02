@@ -1,5 +1,4 @@
 import math
-import traceback
 
 import discord
 from discord import app_commands
@@ -52,8 +51,11 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
 
     if isinstance(error, commands.UserInputError):
         # await ctx.send_help(ctx.command)
+        desc = f"Correct usage: `{ctx.prefix}{ctx.command.qualified_name} {ctx.command.signature}`"
+        if len(error.args) != 0:
+            desc = f"{error.args[0]}\n\n" + desc
         embed = discord.Embed(title=":x: Invalid Input!",
-                              description=f"Correct usage: `{ctx.prefix}{ctx.command.qualified_name} {ctx.command.signature}`",
+                              description=desc,
                               color=0xff0000)
         return await ctx.send(embed=embed)
 
@@ -71,7 +73,7 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         return await ctx.send("I do not have permission to perform an action for that command")
 
     print("Error Caught:")
-    print(traceback.format_exc())
+    print(error)
 
 
 def handle_app_command_error(interaction: discord.Interaction, err: app_commands.AppCommandError):
@@ -81,4 +83,4 @@ def handle_app_command_error(interaction: discord.Interaction, err: app_commands
     :param err: The exception that was raised.
     """
     print("Error Caught:")
-    print(traceback.format_exc())
+    print(error)

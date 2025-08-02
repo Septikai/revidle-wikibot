@@ -3,6 +3,7 @@ import typing
 import discord
 from discord import app_commands
 from discord.ext import commands
+from pymongo.errors import DuplicateKeyError
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
@@ -122,37 +123,51 @@ class Util(commands.Cog):
         if not name.isalnum():
             raise commands.UserInputError
 
-        # TODO: prevent empty messages being saved as tags
-
-        async def make_tag(tag_name: str, content: str, aliases=None):
+        async def make_tag(tag_name: str, content: str, aliases: typing.List[str] = None,
+                           response: discord.InteractionResponse = None):
             if aliases is None:
                 aliases = []
-            await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases)
+            if len(content) == 0:
+                raise commands.UserInputError("Cannot make a tag with an empty body!")
 
+            # Add tag, return with error message on duplicate
+            try:
+                await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases)
+            except DuplicateKeyError:
+                if response is None:
+                    return await ctx.reply("Cannot create tag!\n\nA tag with this name already exists.",
+                                           mention_author=False)
+                else:
+                    return await response.send_message("Cannot create tag!\n\nA tag with this name already exists.",
+                                                       ephemeral=True)
+
+            # Confirm tag creation
+            if response is None:
+                await ctx.reply("Tag created!", mention_author=False)
+            else:
+                await response.send_message("Tag created!", ephemeral=True)
+
+        # Create tag from link
         if link is not None:
             try:
                 msg = await commands.MessageConverter().convert(ctx, link)
             except commands.MessageNotFound:
                 raise commands.UserInputError
-            await make_tag(name, msg.content)
-            if ctx.interaction is None:
-                await ctx.reply("Tag created!", mention_author=False)
-            else:
-                await ctx.reply("Tag created!", ephemeral=True)
+            await make_tag(name, msg.content, response=ctx.interaction.response if ctx.interaction else None)
 
+        # Create tag with message command
         elif ctx.interaction is None:
             await ctx.send("What should the tag be?")
             msg = await self.bot.wait_for("message",
                                           check=lambda m: m.channel == ctx.channel and m.author == ctx.author)
             await make_tag(name, msg.content)
-            await ctx.reply("Tag created!", mention_author=False)
 
+        # Create tag with modal via application command
         else:
             modal = TextInputModal(title="Tag Creation", label="Content", placeholder="Tag Content", long=True)
             await ctx.interaction.response.send_modal(modal)
             await modal.wait()
-            await make_tag(name, modal.text)
-            await modal.response.send_message("Tag created!", ephemeral=True)
+            await make_tag(name, modal.text, response=modal.response)
 
     @tag_group.command(name="delete", aliases=["remove"])
     @app_commands.describe(name="The tag to remove")
