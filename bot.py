@@ -49,7 +49,7 @@ class DiscordBot(commands.Bot):
 
         self.configs: ConfigManager = configs
         self.collections: DatabaseManager = collections
-        self.wiki = None
+        self.wiki: WikiInterface = None
 
         # Make the help command not be case-sensitive
         self._BotBase__cogs = commands.core._CaseInsensitiveDict()
@@ -65,7 +65,7 @@ class DiscordBot(commands.Bot):
 
         print_coloured(Colour.Yellow, f"Connecting to the wiki...\n")
 
-        self.wiki = WikiInterface()
+        self.wiki = WikiInterface(self.configs["secrets"].user_agent)
 
         general_config: GeneralConfig = self.configs["general"]
 
@@ -99,15 +99,14 @@ bot: DiscordBot = DiscordBot(config_manager, database_manager, command_prefix=pr
                              case_insensitive=True, intents=intents)
 
 
-# TODO: uncomment this
-# @bot.event
-# async def on_command_error(ctx: commands.Context, error: commands.CommandError):
-#     """Handles errors raised during execution of message commands.
-#
-#     :param ctx: The context the event is being invoked under.
-#     :param error: The exception that caused the event.
-#     """
-#     handle_message_command_error(ctx, error)
+@bot.event
+async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+    """Handles errors raised during execution of message commands.
+
+    :param ctx: The context the event is being invoked under.
+    :param error: The exception that caused the event.
+    """
+    await handle_message_command_error(ctx, error)
 
 
 @bot.tree.error

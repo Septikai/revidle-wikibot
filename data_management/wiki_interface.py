@@ -4,8 +4,8 @@ from mediawiki import MediaWiki, MediaWikiPage
 
 
 class WikiInterface:
-    def __init__(self):
-        self.wiki = MediaWiki(url="https://revolutionidle.wiki.gg/api.php")
+    def __init__(self, user_agent):
+        self.wiki = MediaWiki(url="https://revolutionidle.wiki.gg/api.php", user_agent=user_agent)
 
     def to_page(self, page_id) -> MediaWikiPage:
         """Convert a page ID to a MediaWikiPage.

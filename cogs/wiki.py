@@ -47,6 +47,8 @@ class Wiki(commands.Cog):
         else:
             await ctx.reply(f"Found:\n{result_str}", view=view, ephemeral=True)
         await view.wait()
+        if view.result is None:
+            return
         result = self.bot.wiki.page_search(view.result)
         await ctx.reply(result.url)
 

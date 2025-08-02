@@ -22,6 +22,8 @@ class SearchResultsView(discord.ui.View):
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if len(self.dropdown.values) == 0:
+            return await interaction.response.send_message("Please select an option.", ephemeral=True)
         await interaction.response.defer()
         self.result = self.dropdown.values[0]
         self.stop()
