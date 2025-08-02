@@ -9,6 +9,7 @@ from discord.ext.commands import Greedy
 
 from data_management.config_manager import ConfigManager
 from data_management.data_protocols import GeneralConfig, CogsConfig, BotSecretsConfig
+from data_management.database_manager import DatabaseManager
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
@@ -24,6 +25,10 @@ BOT_CONFIGS = {
     "constants"
 }
 
+MONGO_COLLECTIONS = {
+    "tags"
+}
+
 
 # TODO: add some form of logging somewhere
 # TODO: add a cog for runtime config control
@@ -31,7 +36,7 @@ BOT_CONFIGS = {
 
 class DiscordBot(commands.Bot):
     """The DiscordBot instance."""
-    def __init__(self, configs: ConfigManager, *args, **kwargs):
+    def __init__(self, configs: ConfigManager, collections: DatabaseManager, *args, **kwargs):
         """Initialise the DiscordBot instance.
 
         :param configs: The ConfigManager to handle bot config files.
@@ -43,6 +48,7 @@ class DiscordBot(commands.Bot):
         # define self.var = ...
 
         self.configs: ConfigManager = configs
+        self.collections: DatabaseManager = collections
         self.wiki = None
 
         # Make the help command not be case-sensitive
@@ -84,9 +90,12 @@ class DiscordBot(commands.Bot):
 
 config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIGS)
 
+database_manager: DatabaseManager = DatabaseManager(config_manager["secrets"].db_connection_string,
+                                                    "revidle-wikibot", MONGO_COLLECTIONS)
+
 prefix = config_manager["general"].message_commands_prefix
 
-bot: DiscordBot = DiscordBot(config_manager, command_prefix=prefix,
+bot: DiscordBot = DiscordBot(config_manager, database_manager, command_prefix=prefix,
                              case_insensitive=True, intents=intents)
 
 

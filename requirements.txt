@@ -9,3 +9,5 @@ multidict==6.6.3
 yarl==1.20.0
 regex==2025.7.34
 pymediawiki==0.7.5
+pymongo==4.13.2
+motor==3.7.1

@@ -6,7 +6,9 @@ from discord.ext import commands
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
-from helpers.utils import Embed
+from helpers.modals import TextInputModal
+from helpers.utils import Embed, create_pages
+from helpers.views import PaginationView
 
 
 class HelpCommand(commands.HelpCommand):
@@ -67,12 +69,7 @@ class HelpCommand(commands.HelpCommand):
 
     async def send_help_embed(self, embed: Embed):
         """Send the help embed"""
-        try:
-            await self.context.author.send(embed=embed)
-            if not isinstance(self.context.channel, discord.DMChannel):
-                await self.context.message.add_reaction("✅")
-        except discord.Forbidden:
-            await self.context.send("Please enable DMs from server members then try again", delete_after=5)
+        await self.context.send(embed=embed)
 
 
 class Util(commands.Cog):
@@ -94,6 +91,14 @@ class Util(commands.Cog):
         """Called when the cog is unloaded"""
         self.bot.help_command = self._original_help_command
 
+    @commands.command(name="ping")
+    async def ping_command(self, ctx):
+        """Pings the bot to show latency"""
+        embed = discord.Embed(title="Pong!", description=f"That took {round(100 * self.bot.latency)} ms",
+                              color=0x00FF00)
+        embed.set_thumbnail(url="https://i.imgur.com/qbyZc2j.gif")
+        await ctx.send(embed=embed)
+
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
     async def tag_group(self, ctx, name: str = ""):
@@ -102,7 +107,6 @@ class Util(commands.Cog):
 
         Tags can be used to save a message to be sent later on request
         """
-        raise NotImplementedError
         if name == "":
             raise commands.UserInputError
         tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
@@ -115,7 +119,6 @@ class Util(commands.Cog):
         """
         Create a new tag
         """
-        raise NotImplementedError
         if not name.isalnum():
             raise commands.UserInputError
 
@@ -155,7 +158,6 @@ class Util(commands.Cog):
         """
         Delete a tag
         """
-        raise NotImplementedError
         await self.bot.collections["tags"].remove_one(name)
         await ctx.reply(f"Tag `{name}` deleted!")
 
@@ -164,7 +166,6 @@ class Util(commands.Cog):
         """
         List all tags
         """
-        raise NotImplementedError
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].get_all()
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
@@ -177,7 +178,6 @@ class Util(commands.Cog):
         """
         Search for a specific tag
         """
-        raise NotImplementedError
         if not name.isalnum():
             raise commands.UserInputError
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].search_all({"_id": name})

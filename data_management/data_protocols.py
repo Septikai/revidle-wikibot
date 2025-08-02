@@ -3,6 +3,7 @@ from typing import Protocol
 
 class BotSecretsConfig(Protocol):
     token: str
+    db_connection_string: str
 
 
 class CogsConfig(Protocol):
