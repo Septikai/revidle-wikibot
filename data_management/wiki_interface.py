@@ -31,4 +31,4 @@ class WikiInterface:
 
         :param text: the page to search for.
         :returns: the page requested."""
-        return self.to_page(self.search(text, 1))
+        return self.to_page(self.search(text, 1)[0])
