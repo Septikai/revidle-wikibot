@@ -1,0 +1,98 @@
+import ast
+import subprocess
+
+import discord
+from discord.ext import commands
+
+from bot import DiscordBot
+from data_management.data_protocols import ConstantsConfig
+
+
+def insert_returns(body):
+    # insert return stmt if the last expression is a expression statement
+    if isinstance(body[-1], ast.Expr):
+        body[-1] = ast.Return(body[-1].value)
+        ast.fix_missing_locations(body[-1])
+
+
+class Admin(commands.Cog):
+    """Admin-only commands."""
+
+    def __init__(self, bot: DiscordBot):
+        """Initialise the Admin cog.
+
+        :param bot: The DiscordBot instance.
+        """
+        self.bot = bot
+        super().__init__()
+
+    @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e"])
+    async def eval_fn_command(self, ctx, *, cmd):
+        """Evaluates input.
+        Input is interpreted as newline seperated statements.
+        If the last statement is an expression, that is the return value.
+        Usable globals:
+        - `bot`: the bot instance
+        - `discord`: the discord module
+        - `commands`: the discord.ext.commands module
+        - `ctx`: the invocation context
+        - `configs`: the bot configs
+        - `__import__`: the builtin `__import__` function
+        Such that `>eval 1 + 1` gives `2` as the result.
+        The following invocation will cause the bot to send the text '9'
+        to the channel of invocation and return '3' as the result of evaluating
+        >eval ```
+        a = 1 + 2
+        b = a * 2
+        await ctx.send(a + b)
+        a
+        ```
+        """
+        constants_config: ConstantsConfig = self.bot.configs["constants"]
+        if ctx.author.id == constants_config.host_user:
+            fn_name = "_eval_expr"
+
+            cmd = cmd.strip("`")
+
+            # add a layer of indentation
+            cmd = "\n".join(f"    {i}" for i in cmd.splitlines())
+
+            # wrap in async def body
+            body = f"async def {fn_name}():\n{cmd}"
+
+            parsed = ast.parse(body)
+            body = parsed.body[0].body
+
+            insert_returns(body)
+
+            env = {
+                "bot": ctx.bot,
+                "discord": discord,
+                "commands": commands,
+                "ctx": ctx,
+                "configs": self.bot.configs,
+                "__import__": __import__
+            }
+
+            try:
+                exec(compile(parsed, filename="<ast>", mode="exec"), env)
+                result = (await eval(f"{fn_name}()", env))
+                await ctx.send(f"```py\n{result}\n```")
+            except Exception as e:
+                await ctx.send(f"An exception occurred:```py\n{e}\n```")
+
+    @commands.command(name="host_eval", hidden=True, aliases=["-he"])
+    async def host_eval_command(self, ctx, *, args):
+        """Eval but straight into the host machine"""
+        # Especially useful for pulling changes from discord without having to ssh into host machine
+        constants_config: ConstantsConfig = self.bot.configs["constants"]
+        if ctx.author.id == constants_config.host_user:
+            await ctx.send(f"```\n{subprocess.check_output(args.split(' ')).decode('utf-8')[:1900]}\n```")
+
+
+async def setup(bot: DiscordBot):
+    """Add the Admin cog to the bot.
+
+    :param bot: The DiscordBot instance.
+    """
+    await bot.add_cog(Admin(bot))

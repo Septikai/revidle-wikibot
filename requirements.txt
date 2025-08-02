@@ -1,0 +1,11 @@
+aiohttp==3.12.15
+aiosignal==1.4.0
+attrs==25.3.0
+discord==2.5.2
+discord.py==2.5.2
+frozenlist==1.7.0
+idna==3.10
+multidict==6.6.3
+yarl==1.20.0
+regex==2025.7.34
+pymediawiki==0.7.5
