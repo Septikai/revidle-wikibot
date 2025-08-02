@@ -1,9 +1,9 @@
-import ast
 import re
 
 from discord.ext import commands
 
 from bot import DiscordBot
+from helpers.views import SearchResultsView
 
 
 class Wiki(commands.Cog):
@@ -35,6 +35,20 @@ class Wiki(commands.Cog):
             result = self.bot.wiki.page_search(query[1] if query[1] != "" else query[3])
             msg += f"<{result.url}>\n" if query[1] != "" else f"{result.url}\n"
         await payload.channel.send(msg, mention_author=False)
+
+    @commands.hybrid_command(name="search")
+    async def search(self, ctx, query: str):
+        """Search for a specific page"""
+        results = self.bot.wiki.search(query)
+        view = SearchResultsView(results)
+        result_str = "\n".join([f"- {result}" for result in results])
+        if ctx.interaction is None:
+            await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False)
+        else:
+            await ctx.reply(f"Found:\n{result_str}", view=view, ephemeral=True)
+        await view.wait()
+        result = self.bot.wiki.page_search(view.result)
+        await ctx.reply(result.url)
 
 
 async def setup(bot: DiscordBot):
