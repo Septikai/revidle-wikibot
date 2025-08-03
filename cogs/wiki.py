@@ -52,6 +52,26 @@ class Wiki(commands.Cog):
         result = self.bot.wiki.page_search(view.result)
         await ctx.reply(result.url)
 
+    @commands.hybrid_command(name="advsearch")
+    async def advsearch(self, ctx, query: str):
+        """
+        Search for a page, but with snippets
+        """
+        results = self.bot.wiki.advanced_search(query)
+        view = SearchResultsView([sr.title for sr in results])
+        result_str = "\n\n".join(
+            f"**{sr.title}**\n{sr.snippet or '*No snippet available*'}"
+            for sr in results
+        ) #TODO: Implement search result message using sr.title and sr.snippet
+        if ctx.interaction is None:
+            await ctx.reply(f"{result_str}", view=view, mention_author=False)
+        else:
+            await ctx.reply(f"{result_str}", view=view, ephemeral=True)
+        await view.wait()
+        if view.result is None:
+            return
+        result = self.bot.wiki.page_search(view.result)
+        await ctx.reply(result.url)
 
 async def setup(bot: DiscordBot):
     """Add the Wiki cog to the bot.

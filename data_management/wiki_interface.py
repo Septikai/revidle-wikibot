@@ -1,11 +1,11 @@
 from typing import List
 
-from mediawiki import MediaWiki, MediaWikiPage
-
+from mediawiki import MediaWikiPage
+from helpers.wiki_lib_patch import PatchedMediaWiki, SearchResult
 
 class WikiInterface:
     def __init__(self, user_agent):
-        self.wiki = MediaWiki(url="https://revolutionidle.wiki.gg/api.php", user_agent=user_agent)
+        self.wiki = PatchedMediaWiki(url="https://revolutionidle.wiki.gg/api.php", user_agent=user_agent)
 
     def to_page(self, page_id) -> MediaWikiPage:
         """Convert a page ID to a MediaWikiPage.
@@ -32,3 +32,9 @@ class WikiInterface:
         :param text: the page to search for.
         :returns: the page requested."""
         return self.to_page(self.search(text, 1)[0])
+
+    def advanced_search(self, text: str, limit=5) -> List[SearchResult]:
+        """
+        Searches for text with snippets of pages where the text is found 
+        """
+        return self.wiki.advanced_search(text, results=limit, srprop=["snippet"])

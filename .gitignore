@@ -1,4 +1,6 @@
 config/
 venv/
+.venv/
 .idea/
 __pycache__/
+sandbox.py
