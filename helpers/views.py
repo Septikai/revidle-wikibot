@@ -57,9 +57,9 @@ class PaginationView(BaseView):
         @wraps(func)
         async def inner(*args, **kwargs):
             if isinstance(self.pages[self.current_page], discord.Embed):
-                await func(content="", embed=self.pages[self.current_page])
+                await func(content="", embed=self.pages[self.current_page], *args, **kwargs)
             else:
-                await func(content=str(self.pages[self.current_page]), embed=None)
+                await func(content=str(self.pages[self.current_page]), embed=None, *args, **kwargs)
         return inner
 
     @discord.ui.button(emoji="⏪")
@@ -93,6 +93,7 @@ class PaginationView(BaseView):
 
 class PaginatedSearchView(SearchResultsView, PaginationView):
     def __init__(self, results: List[SearchResult]):
+        self.results = results
         self.result_list = [f"## {sr.title}\n{sr.snippet or '*No snippet available*'}" for sr in results]
         pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
                  for z in range(0, len(results), 5)]
@@ -102,6 +103,10 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
     def update_dropdown(self, func):
         @wraps(func)
         async def inner(*args, **kwargs):
-            # TODO: update dropdown
-            await func()
+            self.remove_item(self.dropdown)
+            self.dropdown = SearchResultsDropdown(
+                [result.title for result in (self.results[self.current_page*5:(self.current_page*5 + 5 if
+                 self.current_page*5 + 5 < len(self.results) else len(self.results))])])
+            self.add_item(self.dropdown)
+            await func(view=self, *args, **kwargs)
         return inner

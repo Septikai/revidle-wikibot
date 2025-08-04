@@ -28,7 +28,7 @@ class HelpCommand(commands.HelpCommand):
             else:
                 help_embed.add_field(name=f"__Dev Commands:__", value="Development commands for bot control.",
                                      inline=False)
-        help_embed.set_footer(text="Created by @septikai")
+        help_embed.set_footer(text="Created by @septikai and @chillcatto")
         await self.send_help_embed(help_embed)
 
     # help <command>
