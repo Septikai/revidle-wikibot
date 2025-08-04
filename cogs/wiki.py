@@ -1,11 +1,10 @@
-import asyncio
 import re
 
 from discord.ext import commands
 from discord import app_commands
 
 from bot import DiscordBot
-from helpers.views import SearchResultsView
+from helpers.views import SearchResultsView, PaginatedSearchResultsView
 
 
 class Wiki(commands.Cog):
@@ -60,7 +59,7 @@ class Wiki(commands.Cog):
     async def advanced_search(self, ctx, query: str):
         """Search for a page, but with snippets"""
         results = self.bot.wiki.advanced_search(query)
-        view = SearchResultsView([sr.title for sr in results])
+        view = PaginatedSearchResultsView([sr.title for sr in results], query)
         result_str = "\n\n".join(
             f"## {sr.title}\n{sr.snippet or '*No snippet available*'}"
             for sr in results
