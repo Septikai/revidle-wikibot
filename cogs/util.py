@@ -103,8 +103,7 @@ class Util(commands.Cog):
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
     async def tag_group(self, ctx, name: str = ""):
-        """
-        The tag command group
+        """The tag command group
 
         Tags can be used to save a message to be sent later on request
         """
@@ -117,9 +116,7 @@ class Util(commands.Cog):
     @tag_group.command(name="create")
     @app_commands.describe(name="The name for the tag", link="The message to turn into a tag")
     async def tag_create(self, ctx, name: str, link: typing.Optional[str] = None):
-        """
-        Create a new tag
-        """
+        """Create a new tag"""
         if not name.isalnum():
             raise commands.UserInputError
 
@@ -172,17 +169,13 @@ class Util(commands.Cog):
     @tag_group.command(name="delete", aliases=["remove"])
     @app_commands.describe(name="The tag to remove")
     async def tag_delete(self, ctx, name: str):
-        """
-        Delete a tag
-        """
+        """Delete a tag"""
         await self.bot.collections["tags"].remove_one(name)
         await ctx.reply(f"Tag `{name}` deleted!")
 
     @tag_group.command(name="list")
     async def tag_list(self, ctx):
-        """
-        List all tags
-        """
+        """List all tags"""
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].get_all()
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
@@ -192,9 +185,7 @@ class Util(commands.Cog):
     @tag_group.command(name="search", aliases=["find"])
     @app_commands.describe(name="The tag to search for")
     async def tag_search(self, ctx, name: str):
-        """
-        Search for a specific tag
-        """
+        """Search for a specific tag"""
         if not name.isalnum():
             raise commands.UserInputError
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].search_all({"_id": name})
