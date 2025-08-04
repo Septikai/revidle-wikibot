@@ -186,7 +186,7 @@ class Util(commands.Cog):
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].get_all()
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
-        view = PaginationView(pages)
+        view = PaginationView(pages, author=ctx.author)
         view.message = await ctx.reply(embed=pages[0], view=view)
 
     @tag_group.command(name="search", aliases=["find"])
@@ -200,7 +200,7 @@ class Util(commands.Cog):
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].search_all({"_id": name})
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
-        view = PaginationView(pages)
+        view = PaginationView(pages, author=ctx.author)
         view.message = await ctx.reply(embed=pages[0], view=view)
 
 

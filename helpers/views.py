@@ -17,9 +17,10 @@ class SearchResultsDropdown(discord.ui.Select):
 
 
 class BaseView(discord.ui.View):
-    def __init__(self, *args, **kwargs):
-        super().__init__(timeout=60, *args, **kwargs)
+    def __init__(self, author: Union[discord.Member, discord.User] = None, timeout: int = 60, *args, **kwargs):
+        super().__init__(timeout=timeout)
         self.message: discord.Message = None
+        self.author = author
 
     async def update(self, *args, **kwargs):
         if self.message is not None:
@@ -27,6 +28,11 @@ class BaseView(discord.ui.View):
 
     async def on_timeout(self) -> None:
         await self.update(view=None)
+
+    async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
+        if self.author is not None and interaction.user != self.author:
+            return False
+        return True
 
 
 class SearchResultsView(BaseView):
@@ -46,8 +52,8 @@ class SearchResultsView(BaseView):
 
 
 class PaginationView(BaseView):
-    def __init__(self, pages: List[Union[discord.Embed, str]]):
-        super().__init__()
+    def __init__(self, pages: List[Union[discord.Embed, str]], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.pages = pages
         self.current_page = 0
         self.message: discord.Message = None
@@ -92,17 +98,19 @@ class PaginationView(BaseView):
 
 
 class PaginatedSearchView(SearchResultsView, PaginationView):
-    def __init__(self, results: List[SearchResult]):
+    def __init__(self, results: List[SearchResult], *args, **kwargs):
         self.results = results
         self.result_list = [f"## {sr.title}\n{sr.snippet or '*No snippet available*'}" for sr in results]
         pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
                  for z in range(0, len(results), 5)]
-        super().__init__([sr.title for sr in results][:5], pages)
+        super().__init__([sr.title for sr in results][:5], pages, *args, **kwargs)
         self.update = self.update_dropdown(self.update)
 
     def update_dropdown(self, func):
         @wraps(func)
         async def inner(*args, **kwargs):
+            if "view" in kwargs.keys() and kwargs["view"] is None:
+                return await func(*args, **kwargs)
             self.remove_item(self.dropdown)
             self.dropdown = SearchResultsDropdown(
                 [result.title for result in (self.results[self.current_page*5:(self.current_page*5 + 5 if

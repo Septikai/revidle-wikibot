@@ -1,5 +1,6 @@
 import re
 
+import discord
 from discord.ext import commands
 from discord import app_commands
 
@@ -39,15 +40,15 @@ class Wiki(commands.Cog):
 
     @commands.hybrid_command(name="search")
     @app_commands.describe(query="The page to search for")
-    async def search(self, ctx, query: str):
+    async def search(self, ctx, *, query: str):
         """Search for a specific page"""
         results = self.bot.wiki.search(query)
-        view = SearchResultsView(results)
+        if len(results) == 0:
+            return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
+                                   allowed_mentions=discord.AllowedMentions.none())
+        view = SearchResultsView(results, author=ctx.author)
         result_str = "\n".join([f"- {result}" for result in results])
-        if ctx.interaction is None:
-            await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False)
-        else:
-            await ctx.reply(f"Found:\n{result_str}", view=view, ephemeral=True)
+        await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
             return
@@ -56,16 +57,16 @@ class Wiki(commands.Cog):
 
     @commands.hybrid_command(name="advsearch")
     @app_commands.describe(query="The page to search for")
-    async def advanced_search(self, ctx, query: str):
+    async def advanced_search(self, ctx, *, query: str):
         """Search for a page, but with snippets"""
         results = self.bot.wiki.advanced_search(query)
-        view = PaginatedSearchView(results)
+        if len(results) == 0:
+            return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
+                                   allowed_mentions=discord.AllowedMentions.none())
+        view = PaginatedSearchView(results, author=ctx.author)
         # TODO: Implement search result message using sr.title and sr.snippet
         #  result content formatting moved to helpers/views.py Line 97
-        if ctx.interaction is None:
-            view.message = await ctx.reply(view.pages[0], view=view, mention_author=False)
-        else:
-            view.message = await ctx.reply(view.pages[0], view=view, ephemeral=True)
+        view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
             return
