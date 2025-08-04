@@ -4,6 +4,7 @@ from typing import Union, List, Tuple, Optional
 from pydantic import BaseModel, field_validator
 import re
 
+
 class SearchResult(BaseModel):
     ns: int
     title: str
@@ -22,6 +23,7 @@ class SearchResult(BaseModel):
         # Remove any leftover HTML (like &quot;)
         v = v.replace("&quot;", "\"").replace("&lt;", "<").replace("&gt;", ">")
         return v
+
 
 class PatchedMediaWiki(MediaWiki):
     @memoize
