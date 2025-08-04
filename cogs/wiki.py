@@ -62,7 +62,7 @@ class Wiki(commands.Cog):
         results = self.bot.wiki.advanced_search(query)
         view = SearchResultsView([sr.title for sr in results])
         result_str = "\n\n".join(
-            f"**{sr.title}**\n{sr.snippet or '*No snippet available*'}"
+            f"## {sr.title}\n{sr.snippet or '*No snippet available*'}"
             for sr in results
         )
         # TODO: Implement search result message using sr.title and sr.snippet
