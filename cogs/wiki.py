@@ -59,7 +59,7 @@ class Wiki(commands.Cog):
     async def advanced_search(self, ctx, query: str):
         """Search for a page, but with snippets"""
         results = self.bot.wiki.advanced_search(query)
-        view = PaginatedSearchResultsView([sr.title for sr in results], query)
+        view = PaginatedSearchResultsView([sr.title for sr in results])
         result_str = "\n\n".join(
             f"## {sr.title}\n{sr.snippet or '*No snippet available*'}"
             for sr in results
