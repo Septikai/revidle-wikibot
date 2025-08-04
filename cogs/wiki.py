@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from bot import DiscordBot
-from helpers.views import SearchResultsView, PaginatedSearchResultsView
+from helpers.views import SearchResultsView, PaginatedSearchView
 
 
 class Wiki(commands.Cog):
@@ -59,16 +59,13 @@ class Wiki(commands.Cog):
     async def advanced_search(self, ctx, query: str):
         """Search for a page, but with snippets"""
         results = self.bot.wiki.advanced_search(query)
-        view = PaginatedSearchResultsView([sr.title for sr in results])
-        result_str = "\n\n".join(
-            f"## {sr.title}\n{sr.snippet or '*No snippet available*'}"
-            for sr in results
-        )
+        view = PaginatedSearchView(results)
         # TODO: Implement search result message using sr.title and sr.snippet
+        #  result content formatting moved to helpers/views.py Line 97
         if ctx.interaction is None:
-            await ctx.reply(f"{result_str}", view=view, mention_author=False)
+            view.message = await ctx.reply(view.pages[0], view=view, mention_author=False)
         else:
-            await ctx.reply(f"{result_str}", view=view, ephemeral=True)
+            view.message = await ctx.reply(view.pages[0], view=view, ephemeral=True)
         await view.wait()
         if view.result is None:
             return

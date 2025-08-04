@@ -1,7 +1,9 @@
 from functools import wraps
-from typing import List
+from typing import List, Union
 
 import discord
+
+from helpers.wiki_lib_patch import SearchResult
 
 
 class SearchResultsDropdown(discord.ui.Select):
@@ -16,12 +18,15 @@ class SearchResultsDropdown(discord.ui.Select):
 
 class BaseView(discord.ui.View):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(timeout=60, *args, **kwargs)
         self.message: discord.Message = None
 
-    async def update(self, message, *args, **kwargs):
+    async def update(self, *args, **kwargs):
         if self.message is not None:
             await self.message.edit(*args, **kwargs)
+
+    async def on_timeout(self) -> None:
+        await self.update(view=None)
 
 
 class SearchResultsView(BaseView):
@@ -39,13 +44,10 @@ class SearchResultsView(BaseView):
         self.result = self.dropdown.values[0]
         self.stop()
 
-    async def on_timeout(self) -> None:
-        await self.update(self.message, view=None)
-
 
 class PaginationView(BaseView):
-    def __init__(self, pages: List[discord.Embed, str]):
-        super().__init__(timeout=60)
+    def __init__(self, pages: List[Union[discord.Embed, str]]):
+        super().__init__()
         self.pages = pages
         self.current_page = 0
         self.message: discord.Message = None
@@ -55,9 +57,9 @@ class PaginationView(BaseView):
         @wraps(func)
         async def inner(*args, **kwargs):
             if isinstance(self.pages[self.current_page], discord.Embed):
-                await func(self.message, content="", embed=self.pages[self.current_page])
+                await func(content="", embed=self.pages[self.current_page])
             else:
-                await func(self.message, content=str(self.pages[self.current_page]), embed=None)
+                await func(content=str(self.pages[self.current_page]), embed=None)
         return inner
 
     @discord.ui.button(emoji="⏪")
@@ -88,18 +90,18 @@ class PaginationView(BaseView):
             await self.update()
         await interaction.response.defer()
 
-    async def on_timeout(self) -> None:
-        await self.update(view=None)
 
-
-class PaginatedSearchResultsView(SearchResultsView, PaginationView):
-    def __init__(self, results: List[str]):
-        super().__init__(results, None)
+class PaginatedSearchView(SearchResultsView, PaginationView):
+    def __init__(self, results: List[SearchResult]):
+        self.result_list = [f"## {sr.title}\n{sr.snippet or '*No snippet available*'}" for sr in results]
+        pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
+                 for z in range(0, len(results), 5)]
+        super().__init__([sr.title for sr in results][:5], pages)
         self.update = self.update_dropdown(self.update)
 
     def update_dropdown(self, func):
         @wraps(func)
         async def inner(*args, **kwargs):
             # TODO: update dropdown
-            func()
+            await func()
         return inner
