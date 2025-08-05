@@ -79,7 +79,7 @@ class WikiInterface:
         page = self.page_search(results[0][:results[0].index("#")])
         return page.url + results[0][results[0].index("#"):]
 
-    def advanced_search(self, text: str, limit=5) -> List[SearchResult]:
+    def advanced_search(self, text: str, limit=500) -> List[SearchResult]:
         """Searches for text with snippets of pages where the text is found
 
         :param text: the page to search for.
