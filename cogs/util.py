@@ -112,7 +112,7 @@ class Util(commands.Cog):
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
-            return await ctx.send(f"Tag {name} does not exist!", allowed_mentions=discord.AllowedMentions.none())
+            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=discord.AllowedMentions.none())
         mentions = discord.AllowedMentions.none()
         await ctx.send(tag.content, allowed_mentions=mentions)
 
