@@ -95,18 +95,35 @@ class PaginationView(BaseView):
 
 class PaginatedSearchView(SearchResultsView, PaginationView):
     def __init__(self, results: List[SearchResult], *args, **kwargs):
+        self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
         self.results = results
-        self.result_list = [f"## {sr.title}\n{sr.snippet or '*No snippet available*'}" for sr in results]
-        pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
-                 for z in range(0, len(results), 5)]
-        super().__init__([sr.title for sr in results][:5], pages, *args, **kwargs)
+        self.result_list = [
+            f"## {sr.title}{f'\n-# (section {sr.sectionsnippet})' if sr.sectionsnippet else ''}\n{f'{sr.snippet}...' if sr.snippet else '*No snippet available*'}"
+            for sr in results
+        ]
+        # pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
+        #          for z in range(0, len(results), 5)]
+
+        # Build paginated pages with header + footer
+        total = len(results)
+        pages = []
+        for i in range(0, total, self.RESULTS_PER_PAGE):
+            start = i + 1
+            end = min(i + self.RESULTS_PER_PAGE, total)
+            header = f"**{total}** results found. Showing **{start}–{end}** of **{total}**\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            body = "\n\n".join(self.result_list[i:end])
+            footer = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            pages.append(f"{header}\n{body}\n{footer}")
+
+        super().__init__([sr.title for sr in results][:self.RESULTS_PER_PAGE], pages, *args, **kwargs)
 
     async def update(self, *args, **kwargs):
         if "view" in kwargs.keys() and kwargs["view"] is None:
             return await super().update(*args, **kwargs)
         self.remove_item(self.dropdown)
+        # NOTE: This is really cursed, maybe expand into a for loop?
         self.dropdown = SearchResultsDropdown(
-            [result.title for result in (self.results[self.current_page*5:(self.current_page*5 + 5 if
-             self.current_page*5 + 5 < len(self.results) else len(self.results))])])
+            [result.title for result in (self.results[self.current_page*self.RESULTS_PER_PAGE:(self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE if
+             self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE < len(self.results) else len(self.results))])])
         self.add_item(self.dropdown)
         await super().update(view=self, *args, **kwargs)
