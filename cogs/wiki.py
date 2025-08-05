@@ -1,7 +1,7 @@
 import re
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 from bot import DiscordBot
@@ -17,7 +17,17 @@ class Wiki(commands.Cog):
         :param bot: The DiscordBot instance.
         """
         self.bot = bot
+        self.on_message_cache = {}
         super().__init__()
+        self.clear_on_message_cache.start()
+
+    def cog_unload(self) -> None:
+        self.clear_on_message_cache.cancel()
+
+    @tasks.loop(hours=24)
+    async def clear_on_message_cache(self):
+        """Clear the on_message cache to allow new results to be fetched"""
+        self.on_message_cache.clear()
 
     @commands.Cog.listener()
     async def on_message(self, payload):
@@ -33,10 +43,25 @@ class Wiki(commands.Cog):
         if len(res) == 0:
             return
         msg = ""
-        for query in res:
-            result = self.bot.wiki.page_search(query[1] if query[1] != "" else query[3])
-            msg += f"<{result.url}>\n" if query[1] != "" else f"{result.url}\n"
-        await payload.channel.send(msg, mention_author=False)
+        sanitised = [[query[1], True] if query[1] != "" else [query[3], False] for query in res]
+        if any([query.lower() not in self.on_message_cache for [query, _] in sanitised]):
+            async with (payload.channel.typing()):
+                for [query, embed] in sanitised:
+                    if query.lower() in self.on_message_cache:
+                        result = self.on_message_cache[query.lower()]
+                    else:
+                        result = self.bot.wiki.page_or_section_search(query)
+                        self.on_message_cache[query.lower()] = result
+                    if result is None:
+                        continue
+                    msg += f"<{result}>\n" if embed else f"{result}\n"
+        else:
+            msg += "\n".join([f"<{result}>" if embed and result is not None else
+                              f"{result}" if result is not None else ""
+                              for [result, embed] in [[self.on_message_cache[query.lower()], embed]
+                                                      for [query, embed] in sanitised]])
+        if msg != "":
+            await payload.channel.send(msg, mention_author=False)
 
     @commands.hybrid_command(name="search")
     @app_commands.describe(query="The page to search for")
