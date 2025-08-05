@@ -43,7 +43,7 @@ class Wiki(commands.Cog):
         if len(res) == 0:
             return
         msg = ""
-        sanitised = [[query[1], True] if query[1] != "" else [query[3], False] for query in res]
+        sanitised = [[query[1], False] if query[1] != "" else [query[3], True] for query in res]
         if any([query.lower() not in self.on_message_cache for [query, _] in sanitised]):
             async with (payload.channel.typing()):
                 for [query, embed] in sanitised:
@@ -54,9 +54,9 @@ class Wiki(commands.Cog):
                         self.on_message_cache[query.lower()] = result
                     if result is None:
                         continue
-                    msg += f"<{result}>\n" if embed else f"{result}\n"
+                    msg += f"<{result}>\n" if not embed else f"{result}\n"
         else:
-            msg += "\n".join([f"<{result}>" if embed and result is not None else
+            msg += "\n".join([f"<{result}>" if not embed and result is not None else
                               f"{result}" if result is not None else ""
                               for [result, embed] in [[self.on_message_cache[query.lower()], embed]
                                                       for [query, embed] in sanitised]])
