@@ -57,16 +57,12 @@ class PaginationView(BaseView):
         self.pages = pages
         self.current_page = 0
         self.message: discord.Message = None
-        self.update = self.update_results(self.update)
 
-    def update_results(self, func):
-        @wraps(func)
-        async def inner(*args, **kwargs):
-            if isinstance(self.pages[self.current_page], discord.Embed):
-                await func(content="", embed=self.pages[self.current_page], *args, **kwargs)
-            else:
-                await func(content=str(self.pages[self.current_page]), embed=None, *args, **kwargs)
-        return inner
+    async def update(self, *args, **kwargs):
+        if isinstance(self.pages[self.current_page], discord.Embed):
+            await super().update(content="", embed=self.pages[self.current_page], *args, **kwargs)
+        else:
+            await super().update(content=str(self.pages[self.current_page]), embed=None, *args, **kwargs)
 
     @discord.ui.button(emoji="⏪")
     async def first_page(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -104,17 +100,13 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
         pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
                  for z in range(0, len(results), 5)]
         super().__init__([sr.title for sr in results][:5], pages, *args, **kwargs)
-        self.update = self.update_dropdown(self.update)
 
-    def update_dropdown(self, func):
-        @wraps(func)
-        async def inner(*args, **kwargs):
-            if "view" in kwargs.keys() and kwargs["view"] is None:
-                return await func(*args, **kwargs)
-            self.remove_item(self.dropdown)
-            self.dropdown = SearchResultsDropdown(
-                [result.title for result in (self.results[self.current_page*5:(self.current_page*5 + 5 if
-                 self.current_page*5 + 5 < len(self.results) else len(self.results))])])
-            self.add_item(self.dropdown)
-            await func(view=self, *args, **kwargs)
-        return inner
+    async def update(self, *args, **kwargs):
+        if "view" in kwargs.keys() and kwargs["view"] is None:
+            return await super().update(*args, **kwargs)
+        self.remove_item(self.dropdown)
+        self.dropdown = SearchResultsDropdown(
+            [result.title for result in (self.results[self.current_page*5:(self.current_page*5 + 5 if
+             self.current_page*5 + 5 < len(self.results) else len(self.results))])])
+        self.add_item(self.dropdown)
+        await super().update(view=self, *args, **kwargs)

@@ -42,13 +42,14 @@ class Wiki(commands.Cog):
     @app_commands.describe(query="The page to search for")
     async def search(self, ctx, *, query: str):
         """Search for a specific page"""
-        results = self.bot.wiki.search(query)
+        async with ctx.typing():
+            results = self.bot.wiki.search(query)
         if len(results) == 0:
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                                    allowed_mentions=discord.AllowedMentions.none())
         view = SearchResultsView(results, author=ctx.author)
         result_str = "\n".join([f"- {result}" for result in results])
-        await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
+        view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
             return
