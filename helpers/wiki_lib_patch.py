@@ -3,7 +3,7 @@ from mediawiki.utilities import memoize
 from typing import Union, List, Tuple, Optional
 from pydantic import BaseModel, field_validator
 import re
-
+import html
 
 class SearchResult(BaseModel):
     ns: int
@@ -12,6 +12,7 @@ class SearchResult(BaseModel):
     size: Optional[int] = None
     wordcount: Optional[int] = None
     snippet: Optional[str] = None
+    sectionsnippet: Optional[str] = None
     timestamp: Optional[str] = None #NOTE: Should be parsed into datetime object if there's a use case that requires timestamp
 
     @field_validator("snippet", mode="before")
@@ -20,21 +21,29 @@ class SearchResult(BaseModel):
             return v
         # Replace <span class="searchmatch">...</span> with **...**
         v = re.sub(r'<span class="searchmatch">(.*?)</span>', r'**\1**', v)
-        # Remove any leftover HTML (like &quot;)
-        v = v.replace("&quot;", "\"").replace("&lt;", "<").replace("&gt;", ">")
+        v = html.unescape(v)
+        return v
+    
+    @field_validator("sectionsnippet", mode="before")
+    def clean_section_snippet(cls, v):
+        if v is None:
+            return v
+        # Replace <span class="searchmatch">...</span> with **...**
+        v = re.sub(r'<span class="searchmatch">(.*?)</span>', r'**\1**', v)
+        v = html.unescape(v)
         return v
 
 
 class PatchedMediaWiki(MediaWiki):
     @memoize
     def advanced_search(
-        self, query: str, srprop: Optional[List[str]] = [], srnamespace: Optional[List[int]] = [0], results: int = 10
+        self, query: str, srprop: Optional[List[str]] = [], srnamespace: Optional[List[int]] = [0], limit: Optional[int] = None
     ) -> List[SearchResult]:
         """Search text in pages with srprop and srnamespace
 
         Args:
             query (str): Page title
-            results (int): Number of pages to return, defaults to 10
+            limit (int): Number of pages to return, set to None means no limit and will attempt to fetch 500
             srprop (List[str]): List of srprop included in the response, defaults to []
             srnamespace(List[int]): List of namespace ids used for searching, defaults to [0]
         Returns:
@@ -46,6 +55,7 @@ class PatchedMediaWiki(MediaWiki):
                 size: Optional[int] = None
                 wordcount: Optional[int] = None
                 snippet: Optional[str] = None
+                sectionsnippet: Optional[str] = None
                 timestamp: Optional[str] = None        
         """
 
@@ -57,7 +67,7 @@ class PatchedMediaWiki(MediaWiki):
             "list": "search",
             "srnamespace": "|".join(map(str, srnamespace)),
             "srprop": '|'.join(srprop),
-            "srlimit": min(results, max_pull) if results is not None else max_pull,
+            "srlimit": min(limit, max_pull) if limit is not None else max_pull,
             "srsearch": query,
             "sroffset": 0,  # this is what will be used to pull more than the max
         }
