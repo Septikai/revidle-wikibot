@@ -1,7 +1,25 @@
+import typing
 from datetime import datetime
 
 import discord
+from discord.ext import commands
 
+from data_management.data_protocols import ConstantsConfig
+
+
+def dev_check(ctx: typing.Union[commands.Context, discord.Interaction]):
+    """Ensures the person running a command is one of the bot devs"""
+    constants_config: ConstantsConfig = ctx.bot.configs["constants"]
+    return ctx.author.id in constants_config.dev_users
+
+def host_check(ctx: typing.Union[commands.Context, discord.Interaction]):
+    """Ensures the person running a command is the bot host"""
+    constants_config: ConstantsConfig = ctx.bot.configs["constants"]
+    return ctx.author.id == constants_config.host_user
+
+dev_only = commands.check(dev_check)
+
+host_only = commands.check(host_check)
 
 class Embed(discord.Embed):
     """Used for creating an easily customisable discord.Embed object"""

@@ -13,6 +13,7 @@ from data_management.database_manager import DatabaseManager
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
+from helpers.utils import dev_only
 
 intents = discord.Intents.default()
 intents.members = True
@@ -167,7 +168,7 @@ async def sync(ctx: commands.Context, guilds: Greedy[discord.Object], spec: Opti
 
 
 @bot.command(name="reload", aliases=["-r"])
-@commands.is_owner()
+@dev_only
 async def reload_cogs(ctx: commands.Context):
     """Reloads cogs while bot is still online."""
     cogs = bot.configs["cogs"].cogs

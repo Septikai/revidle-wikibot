@@ -1,4 +1,5 @@
 {
   "__comment": "All constant values required for bot operation",
-  "host_user": -1
+  "host_user": -1,
+  "dev_users": [-1]
 }

@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig
+from helpers.utils import host_only, dev_only
 
 
 def insert_returns(body):
@@ -27,7 +28,8 @@ class Admin(commands.Cog):
         super().__init__()
 
     @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e"])
-    async def eval_fn_command(self, ctx, *, cmd):
+    @host_only
+    async def eval_fn_command(self, ctx: commands.Context, *, cmd: str):
         """Evaluates input.
         Input is interpreted as newline seperated statements.
         If the last statement is an expression, that is the return value.
@@ -82,12 +84,22 @@ class Admin(commands.Cog):
                 await ctx.send(f"An exception occurred:```py\n{e}\n```")
 
     @commands.command(name="host_eval", hidden=True, aliases=["-he"])
-    async def host_eval_command(self, ctx, *, args):
+    @host_only
+    async def host_eval_command(self, ctx: commands.Context, *, args):
         """Eval but straight into the host machine"""
         # Especially useful for pulling changes from discord without having to ssh into host machine
         constants_config: ConstantsConfig = self.bot.configs["constants"]
         if ctx.author.id == constants_config.host_user:
             await ctx.send(f"```\n{subprocess.check_output(args.split(' ')).decode('utf-8')[:1900]}\n```")
+
+    @commands.command(name="update", hidden=True, aliases=["-u"])
+    @dev_only
+    async def update_bot(self, ctx: commands.Context, branch: str = "main"):
+        """Update the bot from git"""
+        constants_config: ConstantsConfig = self.bot.configs["constants"]
+        if ctx.author.id in constants_config.dev_users:
+            command = ['git', 'pull', 'origin', 'dev' if branch == 'dev' else 'main']
+            await ctx.send(f"```\n{subprocess.check_output(command).decode('utf-8')[:1900]}\n```")
 
 
 async def setup(bot: DiscordBot):

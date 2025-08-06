@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, List
 
 
 class BotSecretsConfig(Protocol):
@@ -17,6 +17,7 @@ class GeneralConfig(Protocol):
 
 class ConstantsConfig(Protocol):
     host_user: int
+    dev_users: List[int]
 
 
 class TagCollectionEntry(Protocol):
