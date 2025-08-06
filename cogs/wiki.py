@@ -44,22 +44,28 @@ class Wiki(commands.Cog):
 
         # sanitized is [(text, embed)] list
         MIN_QUERY_LENGTH = 3
+        MAX_QUERY_COUNT = 5
 
-        sanitised = []  
+        response_data = []  
         for g1, g2 in res:
             text = g1 or g2 
             processed_text = re.sub(r"\s+", " ", text.strip())
             if len(processed_text) >= MIN_QUERY_LENGTH:
-                sanitised.append((processed_text, False if g1 else True))
+                response_data.append((processed_text, False if g1 else True))
         
-        if len(sanitised) == 0:
+        if len(response_data) == 0:
             return
         
+        # Limited to first MAX_QUERY_COUNT unique queries
+        response_data = list(dict.fromkeys(response_data))[:MAX_QUERY_COUNT]
+
+        # print(response_data)
+
         msg = ""
         # At least one query isn't cached
-        if any([query.lower() not in self.on_message_cache for (query, _) in sanitised]):
+        if any([query.lower() not in self.on_message_cache for (query, _) in response_data]):
             async with (payload.channel.typing()):
-                for (query, embed) in sanitised:
+                for (query, embed) in response_data:
                     if query.lower() in self.on_message_cache:
                         result = self.on_message_cache[query.lower()]
                     else:
@@ -72,7 +78,7 @@ class Wiki(commands.Cog):
         else:
             msg += "\n".join([
                 f"<{result}>" if not embed and result is not None else f"{result}" if result is not None else ""
-                for (query, embed) in sanitised
+                for (query, embed) in response_data
                 for result in [self.on_message_cache[query.lower()]]
             ])
 
