@@ -1,4 +1,5 @@
 import pathlib
+import subprocess
 import time
 from typing import Optional, Literal
 
@@ -181,6 +182,12 @@ async def reload_cogs(ctx: commands.Context):
     print_coloured(Colour.Yellow, f"\n\nInitialising bot, please wait...\n")
     print_coloured(Colour.Green, f"Cogs loaded \"{bot.configs['general'].message_commands_prefix}\"")
     await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>", allowed_mentions=discord.AllowedMentions(users=False))
+
+@bot.command(name="restart")
+@dev_only
+async def restart_bot(ctx: commands.Context):
+    """Restarts the bot via a shell script"""
+    subprocess.Popen(["sh", "restart_bot.sh"])
 
 
 # TODO: add a global check to restrict command usage outside of allowed areas for people without specific roles
