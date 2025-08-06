@@ -51,13 +51,18 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
 
     if isinstance(error, commands.UserInputError):
         # await ctx.send_help(ctx.command)
+        msg = ""
         desc = f"Correct usage: `{ctx.prefix}{ctx.command.qualified_name} {ctx.command.signature}`"
+        if isinstance(ctx.command, (commands.Group, commands.HybridGroup)):
+            desc = "This is a group command, and this error message needs improving.\n" + desc
+            msg = "<@540939418933133312>"
+            # TODO: improve this and remove `msg` when improved
         if len(error.args) != 0:
             desc = f"{error.args[0]}\n\n" + desc
         embed = discord.Embed(title=":x: Invalid Input!",
                               description=desc,
                               color=0xff0000)
-        return await ctx.send(embed=embed)
+        return await ctx.send(msg, embed=embed)
 
     if isinstance(error, commands.NoPrivateMessage):
         try:
@@ -82,5 +87,10 @@ def handle_app_command_error(interaction: discord.Interaction, err: app_commands
     :param interaction: The interaction that is being handled.
     :param err: The exception that was raised.
     """
+    # if command has local error handler, return
+    if hasattr(interaction.command, "on_error"):
+        return
+
+    error = getattr(err, "original", err)
     print("Error Caught:")
     print(error)

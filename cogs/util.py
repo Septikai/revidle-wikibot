@@ -109,11 +109,11 @@ class Util(commands.Cog):
         """
         if name == "":
             raise commands.UserInputError
+        mentions = discord.AllowedMentions.none()
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
-            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=discord.AllowedMentions.none())
-        mentions = discord.AllowedMentions.none()
+            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
         await ctx.send(tag.content, allowed_mentions=mentions)
 
     @tag_group.command(name="create")
@@ -171,13 +171,13 @@ class Util(commands.Cog):
 
     @tag_group.command(name="delete", aliases=["remove"])
     @app_commands.describe(name="The tag to remove")
-    async def tag_delete(self, ctx, name: str):
+    async def tag_delete(self, ctx: commands.Context, name: str):
         """Delete a tag"""
         await self.bot.collections["tags"].remove_one(name)
         await ctx.reply(f"Tag `{name}` deleted!")
 
     @tag_group.command(name="list")
-    async def tag_list(self, ctx):
+    async def tag_list(self, ctx: commands.Context):
         """List all tags"""
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].get_all()
         tag_names: list[str] = [tag.id_ for tag in tags]
@@ -187,7 +187,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="search", aliases=["find"])
     @app_commands.describe(name="The tag to search for")
-    async def tag_search(self, ctx, name: str):
+    async def tag_search(self, ctx: commands.Context, name: str):
         """Search for a specific tag"""
         if not name.isalnum():
             raise commands.UserInputError
@@ -196,6 +196,27 @@ class Util(commands.Cog):
         pages: list[discord.Embed] = create_pages(tag_names)
         view = PaginationView(pages, author=ctx.author)
         view.message = await ctx.reply(embed=pages[0], view=view)
+
+    @tag_group.group(name="alias")
+    async def tag_alias_group(self, ctx: commands.Context):
+        """The tag aliases command group
+
+        Aliases can be used to refer to a tag by another name for ease of access."""
+        raise commands.UserInputError
+
+    @tag_alias_group.command(name="list", aliases=["ls"])
+    @app_commands.describe(name="The tag to check aliases of")
+    async def tag_alias_list(self, ctx: commands.Context, name: str):
+        """Check aliases for a tag"""
+        if name == "":
+            raise commands.UserInputError
+        mentions = discord.AllowedMentions.none()
+        try:
+            tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
+        except ValueError:
+            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+        msg = f"Aliases of tag `{tag.id_}`:\n`" + ("`, `".join(tag.aliases) if len(tag.aliases) >= 1 else "None") + "`"
+        await ctx.send(msg, allowed_mentions=mentions)
 
 
 async def setup(bot: DiscordBot):
