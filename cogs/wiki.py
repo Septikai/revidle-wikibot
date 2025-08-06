@@ -40,7 +40,7 @@ class Wiki(commands.Cog):
         msg = payload.content
 
         # [[x]] = capture group g1, {{x}} = capture group g2
-        res = re.findall(r"\[\[((?:\w|\s)+)\]\]|\{\{((?:\w|\s)+)\}\}", msg)
+        res = re.findall(r"\[\[((?:[\w\s])+)\]\]|\{\{((?:[\w\s])+)\}\}", msg)
 
         # sanitized is [(text, embed)] list
         MIN_QUERY_LENGTH = 3
