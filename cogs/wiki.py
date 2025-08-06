@@ -42,7 +42,7 @@ class Wiki(commands.Cog):
         # [[x]] = capture group g1, {{x}} = capture group g2
         res = re.findall(r"\[\[((?:[\w\s])+)\]\]|\{\{((?:[\w\s])+)\}\}", msg)
 
-        # sanitized is [(text, embed)] list
+        # response_data is [(text, embed)] list, embed = True means link should have embed
         MIN_QUERY_LENGTH = 3
         MAX_QUERY_COUNT = 5
 
@@ -56,10 +56,8 @@ class Wiki(commands.Cog):
         if len(response_data) == 0:
             return
         
-        # Limited to first MAX_QUERY_COUNT unique queries
+        # Limit to first MAX_QUERY_COUNT unique queries
         response_data = list(dict.fromkeys(response_data))[:MAX_QUERY_COUNT]
-
-        # print(response_data)
 
         msg = ""
         # At least one query isn't cached
