@@ -16,11 +16,11 @@ def insert_returns(body):
         ast.fix_missing_locations(body[-1])
 
 
-class Admin(commands.Cog):
-    """Admin-only commands."""
+class Developer(commands.Cog):
+    """Developer-only commands."""
 
     def __init__(self, bot: DiscordBot):
-        """Initialise the Admin cog.
+        """Initialise the Developer cog.
 
         :param bot: The DiscordBot instance.
         """
@@ -30,7 +30,7 @@ class Admin(commands.Cog):
     @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e"])
     @host_only
     async def eval_fn_command(self, ctx: commands.Context, *, cmd: str):
-        """Evaluates input.
+        """Evaluates input. Will be removed when bot development is mostly complete.
         Input is interpreted as newline seperated statements.
         If the last statement is an expression, that is the return value.
         Usable globals:
@@ -86,7 +86,8 @@ class Admin(commands.Cog):
     @commands.command(name="host_eval", hidden=True, aliases=["-he"])
     @host_only
     async def host_eval_command(self, ctx: commands.Context, *, args):
-        """Eval but straight into the host machine"""
+        """Eval but straight into the host machine.
+        Will be removed when bot development is mostly complete."""
         # Especially useful for pulling changes from discord without having to ssh into host machine
         constants_config: ConstantsConfig = self.bot.configs["constants"]
         if ctx.author.id == constants_config.host_user:
@@ -103,8 +104,8 @@ class Admin(commands.Cog):
 
 
 async def setup(bot: DiscordBot):
-    """Add the Admin cog to the bot.
+    """Add the Developer cog to the bot.
 
     :param bot: The DiscordBot instance.
     """
-    await bot.add_cog(Admin(bot))
+    await bot.add_cog(Developer(bot))
