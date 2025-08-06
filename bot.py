@@ -1,3 +1,4 @@
+import os
 import pathlib
 import subprocess
 import time
@@ -187,7 +188,9 @@ async def reload_cogs(ctx: commands.Context):
 @dev_only
 async def restart_bot(ctx: commands.Context):
     """Restarts the bot via a shell script"""
-    subprocess.Popen(["sh", "restart_bot.sh"])
+    await ctx.send("`Restarting bot...`")
+    subprocess.Popen(["sh", "restart_bot.sh"], stdout=open("/dev/null", "w"), stderr=open("/dev/null", "w"),
+                     preexec_fn=os.setpgrp)
 
 
 # TODO: add a global check to restrict command usage outside of allowed areas for people without specific roles
