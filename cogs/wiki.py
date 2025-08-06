@@ -7,7 +7,6 @@ from discord import app_commands
 from bot import DiscordBot
 from helpers.views import SearchResultsView, PaginatedSearchView
 
-
 class Wiki(commands.Cog):
     """Wiki commands and listeners."""
 
@@ -39,14 +38,28 @@ class Wiki(commands.Cog):
         if payload.author.bot:
             return
         msg = payload.content
-        res = re.findall(r"(\[\[(.*?)\]\])|(\{\{(.*?)\}\})", msg)
-        if len(res) == 0:
+
+        # [[x]] = capture group g1, {{x}} = capture group g2
+        res = re.findall(r"\[\[((?:\w|\s)+)\]\]|\{\{((?:\w|\s)+)\}\}", msg)
+
+        # sanitized is [(text, embed)] list
+        MIN_QUERY_LENGTH = 3
+
+        sanitised = []  
+        for g1, g2 in res:
+            text = g1 or g2 
+            processed_text = re.sub(r"\s+", " ", text.strip())
+            if len(processed_text) >= MIN_QUERY_LENGTH:
+                sanitised.append((processed_text, False if g1 else True))
+        
+        if len(sanitised) == 0:
             return
+        
         msg = ""
-        sanitised = [[query[1], False] if query[1] != "" else [query[3], True] for query in res]
-        if any([query.lower() not in self.on_message_cache for [query, _] in sanitised]):
+        # At least one query isn't cached
+        if any([query.lower() not in self.on_message_cache for (query, _) in sanitised]):
             async with (payload.channel.typing()):
-                for [query, embed] in sanitised:
+                for (query, embed) in sanitised:
                     if query.lower() in self.on_message_cache:
                         result = self.on_message_cache[query.lower()]
                     else:
@@ -55,11 +68,14 @@ class Wiki(commands.Cog):
                     if result is None:
                         continue
                     msg += f"<{result}>\n" if not embed else f"{result}\n"
+        # All queries are cached
         else:
-            msg += "\n".join([f"<{result}>" if not embed and result is not None else
-                              f"{result}" if result is not None else ""
-                              for [result, embed] in [[self.on_message_cache[query.lower()], embed]
-                                                      for [query, embed] in sanitised]])
+            msg += "\n".join([
+                f"<{result}>" if not embed and result is not None else f"{result}" if result is not None else ""
+                for (query, embed) in sanitised
+                for result in [self.on_message_cache[query.lower()]]
+            ])
+
         if msg != "":
             await payload.channel.send(msg, mention_author=False)
 
