@@ -132,7 +132,13 @@ class Wiki(commands.Cog):
     @commands.hybrid_command(name="advsearch")
     @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
-        """Search for a page, but with snippets"""
+        """Search for a page, but with snippets
+
+        Allowed operators:
+        - `*` acts as a wildcard
+            - `A*` could match `AP`, `Achievements`, `Animals`, etc
+        - `\?` acts as a single character wildcard
+            - `A\?` could match `AP` or `An`, but not `Achievements` or `Animals`"""
         if len(query) > 300:
             raise commands.UserInputError("Search queries cannot be over 300 characters.")
         results = self.bot.wiki.advanced_search(query)
