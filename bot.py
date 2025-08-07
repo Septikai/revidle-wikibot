@@ -182,7 +182,16 @@ async def reload_cogs(ctx: commands.Context):
             await bot.reload_extension(f"cogs.{cog}")
     print_coloured(Colour.Yellow, f"\n\nInitialising bot, please wait...\n")
     print_coloured(Colour.Green, f"Cogs loaded \"{bot.configs['general'].message_commands_prefix}\"")
-    await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>", allowed_mentions=discord.AllowedMentions(users=False))
+    await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>",
+                   allowed_mentions=discord.AllowedMentions(users=False))
+
+@bot.command(name="reloadconfig", aliases=["-rc"])
+@dev_only
+async def reload_config(ctx: commands.Context):
+    """Reloads configs while bot is still online"""
+    bot.configs.reload()
+    await ctx.send(f"`Configs reloaded by:` <@{ctx.author.id}>",
+                   allowed_mentions=discord.AllowedMentions(users=False))
 
 @bot.command(name="restart")
 @dev_only
