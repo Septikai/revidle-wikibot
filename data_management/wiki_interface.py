@@ -26,7 +26,7 @@ class WikiInterface:
         :param text: the page to search for.
         :param limit: the number of results to return.
         :returns: a list of search results."""
-        results = self.wiki.search(text, results=limit)
+        results = self.wiki.search(text[:300], results=limit)
         if text in results:
             return results
         section_results = [result for result in results if text.lower() in result.lower()]
@@ -89,5 +89,5 @@ class WikiInterface:
         :param text: the page to search for.
         :param limit: the number of results to fetch.
         :returns: a list of SearchResult objects."""
-        return self.wiki.advanced_search(query=text, limit=limit, srprop=["snippet","sectionsnippet"])
+        return self.wiki.advanced_search(query=text[:300], limit=limit, srprop=["snippet","sectionsnippet"])
 
