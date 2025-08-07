@@ -18,6 +18,7 @@ class GeneralConfig(Protocol):
 class ConstantsConfig(Protocol):
     host_user: int
     dev_users: list[int]
+    max_mw_query_len: int
 
 
 class TagCollectionEntry(Protocol):

@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 
 from bot import DiscordBot
+from data_management.data_protocols import ConstantsConfig
 from helpers.views import SearchResultsView, PaginatedSearchView
 
 class Wiki(commands.Cog):
@@ -18,6 +19,8 @@ class Wiki(commands.Cog):
         """
         self.bot = bot
         self.on_message_cache = {}
+        constants: ConstantsConfig = self.bot.configs["constants"]
+        self.max_mw_query_len = constants.max_mw_query_len
         super().__init__()
         self.clear_on_message_cache.start()
 
@@ -113,8 +116,8 @@ class Wiki(commands.Cog):
     @app_commands.describe(query="The query to search for")
     async def search(self, ctx, *, query: str):
         """Search for a specific page"""
-        if len(query) > 300:
-            raise commands.UserInputError("Search queries cannot be over 300 characters.")
+        if len(query) > self.max_mw_query_len:
+            raise commands.UserInputError(f"Search queries cannot be over {self.max_mw_query_len} characters.")
         async with ctx.typing():
             results = self.bot.wiki.search(query)
         if len(results) == 0:
@@ -139,8 +142,8 @@ class Wiki(commands.Cog):
             - `A*` could match `AP`, `Achievements`, `Animals`, etc
         - `\?` acts as a single character wildcard
             - `A\?` could match `AP` or `An`, but not `Achievements` or `Animals`"""
-        if len(query) > 300:
-            raise commands.UserInputError("Search queries cannot be over 300 characters.")
+        if len(query) > self.max_mw_query_len:
+            raise commands.UserInputError(f"Search queries cannot be over {self.max_mw_query_len} characters.")
         results = self.bot.wiki.advanced_search(query)
         if len(results) == 0:
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
