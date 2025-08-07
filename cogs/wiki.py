@@ -45,7 +45,7 @@ class Wiki(commands.Cog):
 
         # response_data is [(text, embed)] list, embed = True means link should have embed
         MIN_QUERY_LENGTH = 3
-        MAX_EMBED_COUNT = 5
+        MAX_EMBED_COUNT = 3
         MAX_RESULT_COUNT = 10
 
         response_data = []  
