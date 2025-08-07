@@ -61,8 +61,11 @@ class WikiInterface:
         :param page: the page to search.
         :param text: the section to search for on the page.
         :returns: a list of result strings in the format `Page#Section`."""
-        # TODO: fix error when calling page.sections on a page with no sections
-        return [f"{page.title}#{section.replace(' ', '_')}" for section in page.sections if text.lower() in section.lower()]
+        # TODO: find a better way to detect a page with no sections
+        try:
+            return [f"{page.title}#{section.replace(' ', '_')}" for section in page.sections if text.lower() in section.lower()]
+        except IndexError:
+            return []
 
     def page_or_section_search(self, text: str) -> str:
         """Searches for a page or section matching the provided text.
