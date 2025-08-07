@@ -37,7 +37,7 @@ class SearchResult(BaseModel):
 class PatchedMediaWiki(MediaWiki):
     @memoize
     def advanced_search(
-        self, query: str, srprop: Optional[List[str]] = [], srnamespace: Optional[List[int]] = [0], limit: Optional[int] = None
+        self, query: str, srprop: Optional[List[str]], srnamespace: Optional[List[int]] = [0], limit: Optional[int] = None
     ) -> List[SearchResult]:
         """Search text in pages with srprop and srnamespace
 
