@@ -42,7 +42,8 @@ class HelpCommand(commands.HelpCommand):
                                    description=command.help if command.help is not None else "No Information",
                                    colour=0x00FF00)
         help_embed.add_field(name="Usage:",
-                             value=f"`{self.context.prefix}{command.qualified_name} {command.signature}"
+                             value=f"`{self.context.prefix}{command.qualified_name}"
+                                   f"{(' ' + command.signature) if command.signature != '' else ''}"
                                    f"`\n\n`<>` represents required arguments\n`[]` represents optional arguments")
         await self.send_help_embed(help_embed)
 
