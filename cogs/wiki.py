@@ -107,7 +107,7 @@ class Wiki(commands.Cog):
             await payload.channel.send(msg, mention_author=False)
 
     @commands.hybrid_command(name="search")
-    @app_commands.describe(query="The page to search for")
+    @app_commands.describe(query="The query to search for")
     async def search(self, ctx, *, query: str):
         """Search for a specific page"""
         async with ctx.typing():
@@ -125,7 +125,7 @@ class Wiki(commands.Cog):
         await ctx.reply(result.url)
 
     @commands.hybrid_command(name="advsearch")
-    @app_commands.describe(query="The page to search for")
+    @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
         """Search for a page, but with snippets"""
         results = self.bot.wiki.advanced_search(query)
