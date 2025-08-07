@@ -2,12 +2,15 @@ from typing import List
 
 import mediawiki
 from mediawiki import MediaWikiPage
+
+from data_management.data_protocols import ConstantsConfig
 from helpers.wiki_lib_patch import PatchedMediaWiki, SearchResult
 
 
 class WikiInterface:
-    def __init__(self, user_agent):
+    def __init__(self, user_agent, max_query_len):
         self.wiki = PatchedMediaWiki(url="https://revolutionidle.wiki.gg/api.php", user_agent=user_agent)
+        self.max_query_len = max_query_len
 
     def to_page(self, page_id) -> MediaWikiPage:
         """Convert a page ID to a MediaWikiPage.
@@ -26,7 +29,7 @@ class WikiInterface:
         :param text: the page to search for.
         :param limit: the number of results to return.
         :returns: a list of search results."""
-        results = self.wiki.search(text[:300], results=limit)
+        results = self.wiki.search(text[:self.max_query_len], results=limit)
         if text in results:
             return results
         section_results = [result for result in results if text.lower() in result.lower()]
@@ -89,5 +92,6 @@ class WikiInterface:
         :param text: the page to search for.
         :param limit: the number of results to fetch.
         :returns: a list of SearchResult objects."""
-        return self.wiki.advanced_search(query=text[:300], limit=limit, srprop=["snippet","sectionsnippet"])
+        return self.wiki.advanced_search(query=text[:self.max_query_len], limit=limit,
+                                         srprop=["snippet","sectionsnippet"])
 
