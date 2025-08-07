@@ -1,4 +1,5 @@
 import re
+from typing import List, Union
 
 import discord
 from discord.ext import commands, tasks
@@ -40,11 +41,12 @@ class Wiki(commands.Cog):
         msg = payload.content
 
         # [[x]] = capture group g1, {{x}} = capture group g2
-        res = re.findall(r"\[\[((?:[\w\s])+)\]\]|\{\{((?:[\w\s])+)\}\}", msg)
+        res = re.findall(r"\[\[(?!\s+\])([\w\s]{3,})\]\]|\{\{(?!\s+\])([\w\s]{3,})\}\}", msg)
 
         # response_data is [(text, embed)] list, embed = True means link should have embed
         MIN_QUERY_LENGTH = 3
-        MAX_QUERY_COUNT = 5
+        MAX_EMBED_COUNT = 5
+        MAX_RESULT_COUNT = 10
 
         response_data = []  
         for g1, g2 in res:
@@ -56,29 +58,50 @@ class Wiki(commands.Cog):
         if len(response_data) == 0:
             return
         
-        # Limit to first MAX_QUERY_COUNT unique queries
-        response_data = list(dict.fromkeys(response_data))[:MAX_QUERY_COUNT]
+        # Remove duplicate queries
+        response_data = list(dict.fromkeys(response_data))
 
-        msg = ""
+        # Local function to format the results message
+        def format_msg(data: List[Union[str, bool]]):
+            embedded_pages = []
+            results = 0
+            message = ""
+            for (query, embed) in data:
+                # Limit to 10 results
+                if results >= MAX_RESULT_COUNT:
+                    return message
+
+                # Get result of query
+                if query.lower() in self.on_message_cache:
+                    result = self.on_message_cache[query.lower()]
+                else:
+                    result = self.bot.wiki.page_or_section_search(query)
+                    self.on_message_cache[query.lower()] = result
+
+                if result is None:
+                    continue
+                results += 1
+
+                # Prevent more than 5 pages being embedded
+                if (embed and not ((result in embedded_pages) or
+                        ("#" in result and result.split("#")[0] in embedded_pages))):
+                    if len(embedded_pages) < MAX_EMBED_COUNT:
+                        embedded_pages.append(result.split("#")[0] if "#" in result else result)
+                    else:
+                        embed = False
+
+                # Format message
+                message += f"<{result}>\n" if not embed else f"{result}\n"
+            return message
+
         # At least one query isn't cached
         if any([query.lower() not in self.on_message_cache for (query, _) in response_data]):
             async with (payload.channel.typing()):
-                for (query, embed) in response_data:
-                    if query.lower() in self.on_message_cache:
-                        result = self.on_message_cache[query.lower()]
-                    else:
-                        result = self.bot.wiki.page_or_section_search(query)
-                        self.on_message_cache[query.lower()] = result
-                    if result is None:
-                        continue
-                    msg += f"<{result}>\n" if not embed else f"{result}\n"
+                msg = format_msg(response_data)
+
         # All queries are cached
         else:
-            msg += "\n".join([
-                f"<{result}>" if not embed and result is not None else f"{result}" if result is not None else ""
-                for (query, embed) in response_data
-                for result in [self.on_message_cache[query.lower()]]
-            ])
+            msg = format_msg(response_data)
 
         if msg != "":
             await payload.channel.send(msg, mention_author=False)
