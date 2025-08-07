@@ -146,8 +146,6 @@ class Wiki(commands.Cog):
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                                    allowed_mentions=discord.AllowedMentions.none())
         view = PaginatedSearchView(results, author=ctx.author)
-        # TODO: Implement search result message using sr.title and sr.snippet
-        #  result content formatting moved to helpers/views.py Line 97
         view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
