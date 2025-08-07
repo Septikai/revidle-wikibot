@@ -113,13 +113,15 @@ class Wiki(commands.Cog):
     @app_commands.describe(query="The query to search for")
     async def search(self, ctx, *, query: str):
         """Search for a specific page"""
+        if len(query) > 300:
+            raise commands.UserInputError("Search queries cannot be over 300 characters.")
         async with ctx.typing():
             results = self.bot.wiki.search(query)
         if len(results) == 0:
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                                    allowed_mentions=discord.AllowedMentions.none())
         view = SearchResultsView(results, author=ctx.author)
-        result_str = "\n".join([f"- {result}" for result in results]).replace('_', '\_')
+        result_str = "\n".join([f"- {result}" for result in results]).replace("_", r"\_")
         view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
@@ -131,6 +133,8 @@ class Wiki(commands.Cog):
     @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
         """Search for a page, but with snippets"""
+        if len(query) > 300:
+            raise commands.UserInputError("Search queries cannot be over 300 characters.")
         results = self.bot.wiki.advanced_search(query)
         if len(results) == 0:
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
