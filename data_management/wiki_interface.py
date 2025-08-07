@@ -89,5 +89,8 @@ class WikiInterface:
         :param text: the page to search for.
         :param limit: the number of results to fetch.
         :returns: a list of SearchResult objects."""
-        return self.wiki.advanced_search(query=text[:300], limit=limit, srprop=["snippet","sectionsnippet"])
+
+        # Revo wiki Guide namespace ID = 3000
+        return self.wiki.advanced_search(query=text[:300], limit=limit, srprop=["snippet","sectionsnippet"], srnamespace=[0, 3000])
+
 

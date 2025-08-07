@@ -37,15 +37,15 @@ class SearchResult(BaseModel):
 class PatchedMediaWiki(MediaWiki):
     @memoize
     def advanced_search(
-        self, query: str, srprop: Optional[List[str]], srnamespace: Optional[List[int]] = [0], limit: Optional[int] = None
+        self, query: str, srprop: Optional[List[str]] = None, srnamespace: Optional[List[int]] = None, limit: Optional[int] = None
     ) -> List[SearchResult]:
         """Search text in pages with srprop and srnamespace
 
         Args:
             query (str): Page title
-            limit (int): Number of pages to return, set to None means no limit and will attempt to fetch 500
-            srprop (List[str]): List of srprop included in the response, defaults to []
-            srnamespace(List[int]): List of namespace ids used for searching, defaults to [0]
+            limit (Optional[int]): Number of pages to return, set to None means no limit and will attempt to fetch 500
+            srprop (Optional[List[str]]): List of srprop included in the response
+            srnamespace(Optional[List[int]]): List of namespace ids used for searching, passing None searches all namespaces
         Returns:
             list of SearchResult instances
             class SearchResult(BaseModel):
@@ -65,8 +65,8 @@ class PatchedMediaWiki(MediaWiki):
 
         search_params = {
             "list": "search",
-            "srnamespace": "|".join(map(str, srnamespace)),
-            "srprop": '|'.join(srprop),
+            "srnamespace": "|".join(map(str, srnamespace)) if srnamespace else "*",
+            "srprop": "|".join(srprop) if srprop else "",
             "srlimit": min(limit, max_pull) if limit is not None else max_pull,
             "srsearch": query,
             "sroffset": 0,  # this is what will be used to pull more than the max
