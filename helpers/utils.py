@@ -21,6 +21,7 @@ dev_only = commands.check(dev_check)
 
 host_only = commands.check(host_check)
 
+
 class Embed(discord.Embed):
     """Used for creating an easily customisable discord.Embed object"""
     def __init__(self, *args, **kwargs):

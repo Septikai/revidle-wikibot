@@ -143,7 +143,7 @@ class Wiki(commands.Cog):
         if view.result is None:
             return
         result = self.bot.wiki.page_search(view.result)
-        await ctx.reply(result.url)
+        await ctx.reply(result.url, ephemeral=True)
 
 
 async def setup(bot: DiscordBot):
