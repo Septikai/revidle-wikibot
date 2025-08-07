@@ -200,7 +200,7 @@ class Util(commands.Cog):
     async def tag_delete(self, ctx: commands.Context, name: str):
         """Delete a tag"""
         await self.bot.collections["tags"].remove_one(name)
-        await ctx.reply(f"Tag `{name}` deleted!")
+        await ctx.reply(f"Tag `{name}` deleted!", ephemeral=True)
 
     @tag_group.command(name="list")
     async def tag_list(self, ctx: commands.Context):
@@ -209,7 +209,7 @@ class Util(commands.Cog):
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
         view = PaginationView(pages, author=ctx.author)
-        view.message = await ctx.reply(embed=pages[0], view=view)
+        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True)
 
     @tag_group.command(name="search", aliases=["find"])
     @app_commands.describe(name="The tag to search for")
@@ -221,7 +221,7 @@ class Util(commands.Cog):
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
         view = PaginationView(pages, author=ctx.author)
-        view.message = await ctx.reply(embed=pages[0], view=view)
+        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True)
 
     @tag_group.group(name="alias")
     async def tag_alias_group(self, ctx: commands.Context):
@@ -242,7 +242,7 @@ class Util(commands.Cog):
         except ValueError:
             return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
         msg = f"Aliases of tag `{tag.id_}`:\n`" + ("`, `".join(tag.aliases) if len(tag.aliases) >= 1 else "None") + "`"
-        await ctx.send(msg, allowed_mentions=mentions)
+        await ctx.send(msg, allowed_mentions=mentions, ephemeral=True)
 
     @tag_group.command(name="edit")
     @app_commands.describe(name="The tag to edit")
