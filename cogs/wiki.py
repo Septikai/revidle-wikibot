@@ -119,13 +119,13 @@ class Wiki(commands.Cog):
             return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                                    allowed_mentions=discord.AllowedMentions.none())
         view = SearchResultsView(results, author=ctx.author)
-        result_str = "\n".join([f"- {result}" for result in results])
+        result_str = "\n".join([f"- {result}" for result in results]).replace('_', '\_')
         view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
         await view.wait()
         if view.result is None:
             return
-        result = self.bot.wiki.page_search(view.result)
-        await ctx.reply(result.url)
+        result = self.bot.wiki.page_or_section_search(view.result)
+        await ctx.reply(result)
 
     @commands.hybrid_command(name="advsearch")
     @app_commands.describe(query="The query to search for")
