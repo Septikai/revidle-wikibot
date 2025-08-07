@@ -129,7 +129,7 @@ class Wiki(commands.Cog):
         result = self.bot.wiki.page_or_section_search(view.result)
         await ctx.reply(result)
 
-    @commands.hybrid_command(name="advsearch", aliases="advancedsearch")
+    @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
         """Search for a page, but with snippets
