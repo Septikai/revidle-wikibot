@@ -97,10 +97,11 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
     def __init__(self, results: List[SearchResult], *args, **kwargs):
         self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
         self.results = results
-        self.result_list = [
-            f"## {sr.title}{f'\n-# (section {sr.sectionsnippet})' if sr.sectionsnippet else ''}\n{f'{sr.snippet}...' if sr.snippet else '*No snippet available*'}"
-            for sr in results
-        ]
+        self.result_list = []
+        for sr in results:
+            section = f"\n-# (section {sr.sectionsnippet})" if sr.sectionsnippet else ""
+            snippet = f"{sr.snippet}..." if sr.snippet else "*No snippet available*"
+            self.result_list.append(f"## {sr.title}{section}\n{snippet}")
         # pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
         #          for z in range(0, len(results), 5)]
 
