@@ -65,6 +65,8 @@ class Wiki(commands.Cog):
         def format_msg(data: List[Union[str, bool]]):
             embedded_pages = []
             results = 0
+            seen_queries = set()
+
             message = ""
             for (query, embed) in data:
                 # Limit to 10 results
@@ -78,9 +80,10 @@ class Wiki(commands.Cog):
                     result = self.bot.wiki.page_or_section_search(query)
                     self.on_message_cache[query.lower()] = result
 
-                if result is None:
+                if result is None or result in seen_queries:
                     continue
                 results += 1
+                seen_queries.add(result)
 
                 # Prevent more than 5 pages being embedded
                 if (embed and not ((result in embedded_pages) or
