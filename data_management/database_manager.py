@@ -118,15 +118,20 @@ class MongoInterface:
 
     async def update_one(self, id_: str, **kwargs):
         if id_ not in self._data:
-            raise ValueError(f"Invalid database entry ID: {id_}")
+            raw_entry = await self._collection.find_one({"_id": id_})
+            if raw_entry is None:
+                raise ValueError(f"Invalid database entry ID: {id_}")
         entry = await self._collection.update_one({"_id": id_}, {"$set": kwargs})
-        self._data[id_] = CollectionEntry(entry)
+        self._data[id_] = CollectionEntry(await self._collection.find_one({"_id": id_}))
 
     async def remove_one(self, id_: str):
         if id_ not in self._data:
-            raise ValueError(f"Invalid database entry ID: {id_}")
+            raw_entry = await self._collection.find_one({"_id": id_})
+            if raw_entry is None:
+                raise ValueError(f"Invalid database entry ID: {id_}")
         await self._collection.delete_one({"_id": id_})
-        del self._data[id_]
+        if id_ in self._data:
+            del self._data[id_]
 
 
 class DatabaseManager:

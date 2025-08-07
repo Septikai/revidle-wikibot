@@ -3,11 +3,10 @@ import typing
 import discord
 from discord import app_commands
 from discord.ext import commands
-from pymongo.errors import DuplicateKeyError
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
-from helpers.modals import TextInputModal
+from helpers.modals import TagModal
 from helpers.utils import Embed, create_pages
 from helpers.views import PaginationView
 
@@ -100,20 +99,57 @@ class Util(commands.Cog):
         embed.set_thumbnail(url="https://i.imgur.com/qbyZc2j.gif")
         await ctx.send(embed=embed)
 
+    async def tag_check(self, tag_name: str, content: str, aliases: typing.List[str] = None,
+                        response: discord.InteractionResponse = None):
+        """Prevents all invalid tags
+
+        :type tag_name: the name of the tag
+        :param content: the content of the tag
+        :param aliases: the aliases of the tag
+        :param response: the discord.InteractionResponse that triggered this, if it exists
+        :raises: commands.UserInputError"""
+        # Prevent empty tags
+        if len(content) == 0:
+            raise commands.UserInputError("Cannot make a tag with an empty body!")
+
+        # Handle aliases
+        if aliases is None:
+            aliases = []
+        else:
+            # Prevent duplicate names and aliases across tags
+            all_tags = await self.bot.collections["tags"].get_all()
+            duplicates = [name_alias for tag in all_tags
+                          for name_alias in [tag["id_"], *tag["aliases"]]
+                          if name_alias in aliases or name_alias == tag_name]
+            if len(duplicates) > 0:
+                if response is not None:
+                    await response.defer()
+                raise commands.UserInputError(f"A tag already exists with name or alias: `{duplicates[0]}`")
+
+        # Prevent a tag having the same name and alias
+        if tag_name in aliases:
+            if response is not None:
+                await response.defer()
+            raise commands.UserInputError(f"A tag cannot have its own name as an alias!")
+
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
     async def tag_group(self, ctx, name: str = ""):
         """The tag command group
 
-        Tags can be used to save a message to be sent later on request
-        """
+        Tags can be used to save a message to be sent later on request"""
         if name == "":
             raise commands.UserInputError
         mentions = discord.AllowedMentions.none()
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
-            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            # No tag with `name` as its ID, check all tags to find aliases
+            all_tags = await self.bot.collections["tags"].get_all()
+            tags = [z for z in all_tags if name in z["aliases"]]
+            if len(tags) == 0:
+                return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            tag = tags[0]
         await ctx.send(tag.content, allowed_mentions=mentions)
 
     @tag_group.command(name="create")
@@ -125,21 +161,11 @@ class Util(commands.Cog):
 
         async def make_tag(tag_name: str, content: str, aliases: typing.List[str] = None,
                            response: discord.InteractionResponse = None):
-            if aliases is None:
-                aliases = []
-            if len(content) == 0:
-                raise commands.UserInputError("Cannot make a tag with an empty body!")
+            # Prevent invalid tags
+            await self.tag_check(tag_name, content, aliases, response)
 
             # Add tag, return with error message on duplicate
-            try:
-                await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases)
-            except DuplicateKeyError:
-                if response is None:
-                    return await ctx.reply("Cannot create tag!\n\nA tag with this name already exists.",
-                                           mention_author=False)
-                else:
-                    return await response.send_message("Cannot create tag!\n\nA tag with this name already exists.",
-                                                       ephemeral=True)
+            await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases)
 
             # Confirm tag creation
             if response is None:
@@ -164,10 +190,10 @@ class Util(commands.Cog):
 
         # Create tag with modal via application command
         else:
-            modal = TextInputModal(title="Tag Creation", label="Content", placeholder="Tag Content", long=True)
+            modal = TagModal(title="Tag Creation", aliases=[])
             await ctx.interaction.response.send_modal(modal)
             await modal.wait()
-            await make_tag(name, modal.text, response=modal.response)
+            await make_tag(name, modal.content, modal.aliases, response=modal.response)
 
     @tag_group.command(name="delete", aliases=["remove"])
     @app_commands.describe(name="The tag to remove")
@@ -217,6 +243,38 @@ class Util(commands.Cog):
             return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
         msg = f"Aliases of tag `{tag.id_}`:\n`" + ("`, `".join(tag.aliases) if len(tag.aliases) >= 1 else "None") + "`"
         await ctx.send(msg, allowed_mentions=mentions)
+
+    @tag_group.command(name="edit")
+    @app_commands.describe(name="The tag to edit")
+    async def tag_edit(self, ctx: commands.Context, name: str):
+        """Edit an existing tag"""
+
+        # Create tag with message command
+        if ctx.interaction is None:
+            return await ctx.send("Tags can only be edited via Application (Slash) Commands.")
+
+        mentions = discord.AllowedMentions.none()
+        try:
+            tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
+        except ValueError:
+            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+
+        async def edit_tag(tag_name: str, content: str, aliases: typing.List[str],
+                           response: discord.InteractionResponse):
+            # Prevent invalid tags
+            await self.tag_check(tag_name, content, aliases, response)
+
+            # Modify tag
+            await self.bot.collections["tags"].update_one(tag_name, content=content, aliases=aliases)
+
+            # Confirm tag modification
+            await response.send_message("Tag edited successfully!", ephemeral=True)
+
+        # Edit tag with modal via application command
+        modal = TagModal(title="Tag Modification", aliases=tag.aliases, content=tag.content)
+        await ctx.interaction.response.send_modal(modal)
+        await modal.wait()
+        await edit_tag(name, modal.content, modal.aliases, response=modal.response)
 
 
 async def setup(bot: DiscordBot):
