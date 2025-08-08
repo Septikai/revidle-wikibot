@@ -1,4 +1,5 @@
 import typing
+from random import randint
 
 import discord
 from discord import app_commands
@@ -88,12 +89,26 @@ class Util(commands.Cog):
         self.bot.help_command = HelpCommand()
         bot.help_command.cog = self
 
+        self.auto_toggle_status.start()
+
     def cog_unload(self):
         """Called when the cog is unloaded"""
         self.bot.help_command = self._original_help_command
 
+    async def toggle_bot_status(self):
+        watching = ["discord.gg/apEk7SUCTB", "discord.gg/onigaming"]
+        rand = randint(0, 5)
+        if rand in [1, 2]:
+            await self.bot.change_presence(
+                activity=discord.Activity(type=discord.ActivityType.watching, name=watching[rand]))
+        elif rand == 2:
+            await self.bot.change_presence(activity=discord.Game(name="Revolution Idle"))
+        else:
+            text = ("Reading" if rand == 3 else "Writing" if rand == 4 else "Maintaining") + " Revolution Idle Wiki"
+            await self.bot.change_presence(activity=discord.CustomActivity(name=text))
+
     @commands.command(name="ping")
-    async def ping_command(self, ctx):
+    async def ping_command(self, ctx: commands.Context):
         """Pings the bot to show latency"""
         embed = discord.Embed(title="Pong!", description=f"That took {round(100 * self.bot.latency)} ms",
                               color=0x00FF00)
@@ -135,7 +150,7 @@ class Util(commands.Cog):
 
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
-    async def tag_group(self, ctx, name: str = ""):
+    async def tag_group(self, ctx: commands.Context, name: str = ""):
         """The tag command group
 
         Tags can be used to save a message to be sent later on request"""
@@ -155,7 +170,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="create")
     @app_commands.describe(name="The name for the tag", link="The message to turn into a tag")
-    async def tag_create(self, ctx, name: str, link: typing.Optional[str] = None):
+    async def tag_create(self, ctx: commands.Context, name: str, link: typing.Optional[str] = None):
         """Create a new tag"""
         if not name.isalnum():
             raise commands.UserInputError
