@@ -3,7 +3,7 @@ from random import randint
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
@@ -94,6 +94,10 @@ class Util(commands.Cog):
     def cog_unload(self):
         """Called when the cog is unloaded"""
         self.bot.help_command = self._original_help_command
+
+    @tasks.loop(minutes=30)
+    async def auto_toggle_status(self):
+        await self.toggle_bot_status()
 
     async def toggle_bot_status(self):
         watching = ["discord.gg/apEk7SUCTB", "discord.gg/onigaming"]
