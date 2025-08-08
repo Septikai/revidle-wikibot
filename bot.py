@@ -114,6 +114,11 @@ bot: DiscordBot = DiscordBot(config_manager, database_manager, settings_manager,
                              command_prefix=get_prefix, case_insensitive=True, intents=intents)
 
 
+@bot.check
+async def global_permissions_check(ctx: commands.Context):
+    return True
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
     """Handles errors raised during execution of message commands.
