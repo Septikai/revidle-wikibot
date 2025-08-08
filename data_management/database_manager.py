@@ -39,11 +39,8 @@ class MongoInterface:
         self._collection = collection
         self._all_loaded = False
         self._data: dict[str, CollectionEntry] = {}
-        self.settings_initialised = False
 
     def __getattr__(self, id_: str):
-        if id_ == "settings" and self.settings_initialised:
-            raise ValueError("Settings can only be accessed through `bot.settings`, not through `bot.collections`.")
         entry = self._data.get(id_)
         if entry is None:
             raise ValueError(f"Invalid database entry ID: {id_}\nAccessing in this method only includes cached entries"
@@ -52,7 +49,6 @@ class MongoInterface:
         return entry
 
     def get_collection(self):
-        self.settings_initialised = True
         return self._collection
 
     def reload(self):
@@ -160,6 +156,7 @@ class DatabaseManager:
 
     def __init__(self, connection_string: str, db_name: str, to_load: Set[str]):
         self._loaded_collections: dict[str, MongoInterface] = {}
+        self.settings_initialised = False
 
         self._cluster = AsyncIOMotorClient(connection_string)
         self._db = self._cluster[db_name]
@@ -174,11 +171,17 @@ class DatabaseManager:
         :param item: The collection id to retrieve.
         :return: The collection. That collection is refreshed automatically on reload.
         """
+        if item == "settings" and self.settings_initialised:
+            raise ValueError("Settings can only be accessed through `bot.settings`, not through `bot.collections`.")
         database = self._loaded_collections.get(item)
         if database is None:
             raise ValueError(f"Invalid database id: {item}")
 
         return database
+
+    def get_settings(self):
+        self.settings_initialised = True
+        return self["settings"].get_collection()
 
     def load(self, collection_id: str):
         """
