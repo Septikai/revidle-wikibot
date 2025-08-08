@@ -99,6 +99,10 @@ class Util(commands.Cog):
     async def auto_toggle_status(self):
         await self.toggle_bot_status()
 
+    @auto_toggle_status.before_loop
+    async def before_auto_toggle_status(self):
+        await self.bot.wait_until_ready()
+
     async def toggle_bot_status(self):
         watching = ["discord.gg/apEk7SUCTB", "discord.gg/onigaming"]
         rand = randint(0, 5)
