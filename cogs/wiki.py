@@ -83,7 +83,10 @@ class Wiki(commands.Cog):
                     result = self.on_message_cache[query.lower()]
                 else:
                     result = self.bot.wiki.page_or_section_search(query)
-                    self.on_message_cache[query.lower()] = result
+                    if result is None and ":" in query and query.split(":")[0].lower() == "new":
+                        result = f"https://revolutionidle.wiki.gg/wiki/{query.split(':')[1]}?action=edit&redlink=1"
+                    else:
+                        self.on_message_cache[query.lower()] = result
 
                 if result is None or result in seen_queries:
                     continue
