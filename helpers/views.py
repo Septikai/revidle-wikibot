@@ -24,7 +24,7 @@ class BaseView(discord.ui.View):
 
     async def update(self, *args, **kwargs):
         if self.message is not None:
-            await self.message.edit(*args, **kwargs)
+            await self.message.edit(allowed_mentions=discord.AllowedMentions.none(), *args, **kwargs)
 
     async def on_timeout(self) -> None:
         await self.update(view=None)
