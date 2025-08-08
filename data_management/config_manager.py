@@ -32,7 +32,7 @@ class ConfigManager:
 
     Configs are immutable and can only be read by the bot.
 
-    Reloading the manager automatically reloads all used configs; don't call ``__reload()`` on configs directly.
+    Reloading the manager automatically reloads all used configs; don't call ``__reload__()`` on configs directly.
 
     Basic use (for adding a config to a cog):
 
