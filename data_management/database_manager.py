@@ -180,8 +180,9 @@ class DatabaseManager:
         return database
 
     def get_settings(self):
+        settings = self["settings"]
         self.settings_initialised = True
-        return self["settings"].get_collection()
+        return settings.get_collection()
 
     def load(self, collection_id: str):
         """
