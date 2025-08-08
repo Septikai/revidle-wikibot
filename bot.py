@@ -12,7 +12,7 @@ from discord.ext.commands import Greedy
 from data_management.config_manager import ConfigManager
 from data_management.data_protocols import GeneralConfig, CogsConfig, BotSecretsConfig
 from data_management.database_manager import DatabaseManager
-from data_management.settings_manager import SettingsInterface
+from data_management.settings_interface import SettingsInterface
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
