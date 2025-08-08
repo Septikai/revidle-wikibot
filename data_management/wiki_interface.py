@@ -8,9 +8,9 @@ from helpers.wiki_lib_patch import PatchedMediaWiki, SearchResult
 
 
 class WikiInterface:
-    def __init__(self, user_agent, max_query_len):
-        self.wiki = PatchedMediaWiki(url="https://revolutionidle.wiki.gg/api.php", user_agent=user_agent)
+    def __init__(self, user_agent, max_query_len, wiki_base_url):
         self.max_query_len = max_query_len
+        self.wiki = PatchedMediaWiki(url=f"{wiki_base_url}api.php", user_agent=user_agent)
 
     def to_page(self, page_id) -> MediaWikiPage:
         """Convert a page ID to a MediaWikiPage.

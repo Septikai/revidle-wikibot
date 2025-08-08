@@ -21,6 +21,7 @@ class Wiki(commands.Cog):
         self.on_message_cache = {}
         constants: ConstantsConfig = self.bot.configs["constants"]
         self.max_mw_query_len = constants.max_mw_query_len
+        self.wiki_base_url = constants.wiki_base_url
         super().__init__()
         self.clear_on_message_cache.start()
 
@@ -84,7 +85,7 @@ class Wiki(commands.Cog):
                 else:
                     result = self.bot.wiki.page_or_section_search(query)
                     if result is None and ":" in query and query.split(":")[0].lower() == "new":
-                        result = f"https://revolutionidle.wiki.gg/wiki/{query.split(':')[1]}?action=edit&redlink=1"
+                        result = f"{self.wiki_base_url}{query.split(':')[1]}?action=edit&redlink=1"
                     else:
                         self.on_message_cache[query.lower()] = result
 

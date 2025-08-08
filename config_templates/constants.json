@@ -2,5 +2,6 @@
   "__comment": "All constant values required for bot operation",
   "host_user": -1,
   "dev_users": [-1],
+  "wiki_base_url": "https://revolutionidle.wiki.gg/",
   "max_mw_query_len": 300
 }
