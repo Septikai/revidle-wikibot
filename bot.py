@@ -108,7 +108,7 @@ config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIG
 database_manager: DatabaseManager = DatabaseManager(config_manager["secrets"].db_connection_string,
                                                     "revidle-wikibot", MONGO_COLLECTIONS)
 
-settings_manager: SettingsInterface = SettingsInterface(database_manager["settings"].get_collection(), config_manager["general"].default_settings)
+settings_manager: SettingsInterface = SettingsInterface(database_manager.get_settings(), config_manager["general"].default_settings)
 
 bot: DiscordBot = DiscordBot(config_manager, database_manager, settings_manager,
                              command_prefix=get_prefix, case_insensitive=True, intents=intents)
