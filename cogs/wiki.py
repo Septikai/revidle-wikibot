@@ -44,7 +44,8 @@ class Wiki(commands.Cog):
         msg = payload.content
 
         # [[x]] = capture group g1, {{x}} = capture group g2
-        res = re.findall(r"\[\[(?!\s+\])([\w\s]{3,})\]\]|\{\{(?!\s+\])([\w\s]{3,})\}\}", msg)
+        res = re.findall(
+            r"\[\[(?!\s+\])((?:[\w\s]+:)?(?:[\w\s]{3,}))\]\]|\{\{(?!\s+\])((?:[\w\s]+:)?(?:[\w\s]{3,}))\}\}", msg)
 
         # response_data is [(text, embed)] list, embed = True means link should have embed
         MIN_QUERY_LENGTH = 3
