@@ -39,18 +39,21 @@ class MongoInterface:
         self._collection = collection
         self._all_loaded = False
         self._data: dict[str, CollectionEntry] = {}
-
-        # TODO: ensure the collection actually exists
+        self.settings_initialised = False
 
     def __getattr__(self, id_: str):
+        if id_ == "settings" and self.settings_initialised:
+            raise ValueError("Settings can only be accessed through `bot.settings`, not through `bot.collections`.")
         entry = self._data.get(id_)
         if entry is None:
             raise ValueError(f"Invalid database entry ID: {id_}\nAccessing in this method only includes cached entries"
                              f"\nPlease use {self.get_one.__qualname__} to avoid that")
 
-            pass
-
         return entry
+
+    def get_collection(self):
+        self.settings_initialised = True
+        return self._collection
 
     def reload(self):
         self._data = {}
@@ -101,7 +104,7 @@ class MongoInterface:
 
         return data.values()
 
-    async def insert_one(self, id_: str = "", **kwargs):
+    async def insert_one(self, id_: str, **kwargs):
         if id_ != "":
             if id_ in self._data:
                 raise ValueError(f"Entry already exists with ID: {id_}")
@@ -138,7 +141,7 @@ class DatabaseManager:
     """
     Base class for working with MongoDB databases.
 
-    Reloading the manager automatically reloads all used databases; don't call ``__reload()`` on collections directly.
+    Reloading the manager automatically reloads all used databases; don't call ``__reload__()`` on collections directly.
 
     Basic use (for adding a database to a cog):
 
@@ -146,7 +149,7 @@ class DatabaseManager:
 
     - Add your collection to the list of loaded collections; see bot.py
 
-    - Retrieve your config in cog's __init__ method::
+    - Retrieve your collection in cog's __init__ method::
 
         self.collection: MyCollection = bot.collections["my_collection"]
 
@@ -192,7 +195,7 @@ class DatabaseManager:
         self._loaded_collections[collection_id] = new_collection
         return new_collection
 
-    def reload(self) -> None:
+    def __reload__(self) -> None:
         """
         Reloads all collections currently managed by this manager.
         """

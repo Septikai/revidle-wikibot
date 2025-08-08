@@ -1,4 +1,9 @@
 {
   "__comment": "General config options that don't fit any other categories.",
-  "message_commands_prefix": "-"
+  "default_settings": {
+      "prefix": "-",
+      "disabled_commands": [],
+      "disabled_events": [],
+      "permissions": {}
+  }
 }

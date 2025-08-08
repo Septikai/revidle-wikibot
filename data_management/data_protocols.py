@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Union
 
 
 class BotSecretsConfig(Protocol):
@@ -7,12 +7,12 @@ class BotSecretsConfig(Protocol):
     user_agent: str
 
 
+class GeneralConfig(Protocol):
+    default_settings: dict[str, Union[str, list, dict]]
+
+
 class CogsConfig(Protocol):
     cogs: list[str]
-
-
-class GeneralConfig(Protocol):
-    message_commands_prefix: str
 
 
 class ConstantsConfig(Protocol):
