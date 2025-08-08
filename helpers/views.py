@@ -1,4 +1,3 @@
-from functools import wraps
 from typing import List, Union
 
 import discord
@@ -128,3 +127,8 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
              self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE < len(self.results) else len(self.results))])])
         self.add_item(self.dropdown)
         await super().update(view=self, *args, **kwargs)
+
+
+# class SettingsMenuView(BaseView):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)

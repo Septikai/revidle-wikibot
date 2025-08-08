@@ -7,9 +7,10 @@ from discord.ext import commands, tasks
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
+from helpers import logic
 from helpers.modals import TagModal
-from helpers.utils import Embed, create_pages
-from helpers.views import PaginationView
+from helpers.utils import Embed, create_pages, dev_only, RoleConverter
+from helpers.views import PaginationView#, SettingsMenuView
 
 
 class HelpCommand(commands.HelpCommand):
@@ -51,8 +52,22 @@ class HelpCommand(commands.HelpCommand):
     # help <group>
     async def send_group_help(self, group: commands.Group):
         """Help for a command group"""
-        # TODO: implement this
-        await self.context.send("This is help group.\n<@540939418933133312> implement this")
+        title = group.name.capitalize()
+        if len(group.parents) > 0:
+            parents = group.parents
+            parents.reverse()
+            title = f"{' '.join([parent.name.capitalize() for parent in parents])} {title}"
+        help_embed = discord.Embed(title=title,
+                                   description=group.help if group.help is not None else "No Information",
+                                   colour=0x00FF00)
+        help_embed.add_field(name="Usage:",
+                             value=f"`{self.context.prefix}{group.qualified_name}"
+                                   f"{(' ' + group.signature) if group.signature != '' else ''}"
+                                   f"`\n\n`<>` represents required arguments\n`[]` represents optional arguments")
+        help_embed.add_field(name="Subcommands:",
+                             value=f"`{'`, `'.join([command.qualified_name for command in group.commands])}`",
+                             inline=False)
+        await self.send_help_embed(help_embed)
 
     # help <cog>
     async def send_cog_help(self, cog: commands.Cog):
@@ -113,6 +128,47 @@ class Util(commands.Cog):
         embed = discord.Embed(title="Pong!", description=f"That took {round(100 * self.bot.latency)} ms",
                               color=0x00FF00)
         embed.set_thumbnail(url="https://i.imgur.com/qbyZc2j.gif")
+        await ctx.send(embed=embed)
+
+    @commands.command(name="rolelist")
+    async def role_list(self, ctx: commands.Context, *, text: str):
+        """
+        Check how many users have a specific role (or combination of roles).
+        Usable characters:
+        `role & role` - users with both roles
+        `role | role` - users with either role
+        `!role` - users without that role
+        `()` - can be used to format the query
+        """
+        special_tokens = "&|!()"
+        tokens = []
+        builder = ""
+        for char in text:
+            if char in special_tokens:
+                tokens.append(builder)
+                tokens.append(char)
+                builder = ""
+            else:
+                builder += char
+        tokens.append(builder)
+        empty = []
+        for i, item in enumerate(tokens):
+            if item == "" or item.isspace():
+                empty.append(item)
+        for i in empty:
+            tokens.remove(i)
+        for i, item in enumerate(tokens):
+            if item not in special_tokens:
+                tokens[i] = await RoleConverter().convert(ctx, item.strip())
+        count = 0
+        tree = logic.BooleanLogic.OperationBuilder(tokens, lambda item, items: item in items).build()
+        async with ctx.typing():
+            for member in ctx.guild.members:
+                if tree.evaluate(member.roles):
+                    count += 1
+        embed = discord.Embed(title="Role List Search", colour=discord.Colour.og_blurple())
+        embed.add_field(name="Query", value=tree.pprint(lambda x: x.mention), inline=False)
+        embed.add_field(name="Member count", value=f"{count:,}", inline=False)
         await ctx.send(embed=embed)
 
     async def tag_check(self, tag_name: str, content: str, aliases: typing.List[str] = None,
@@ -291,6 +347,24 @@ class Util(commands.Cog):
         await ctx.interaction.response.send_modal(modal)
         await modal.wait()
         await edit_tag(name, modal.content, modal.aliases, response=modal.response)
+
+    # @commands.hybrid_command(name="settings", aliases=["options"])
+    # @dev_only
+    # async def edit_settings(self, ctx: commands.Context):
+    #     """Provides an interactive settings editor to allow you to edit bot settings at runtime
+    #
+    #     This enables more useful and configurable settings to exist, and for the bot to behave differently in different
+    #     servers."""
+    #     embed = discord.Embed(title="Settings",
+    #                           description="Interactive settings editor. Allows modification of bot settings for the"
+    #                                       "server at runtime, enabling more useful and configurable settings to exist.",
+    #                           colour=0x00FF00)
+    #     view = SettingsMenuView(author=ctx.author)
+    #     view.message = await ctx.reply(embed=embed, view=view, ephemeral=True,
+    #                                    allowed_mentions=discord.AllowedMentions.none())
+    #     await view.wait()
+    #     await view.message.delete()
+    #     self.bot.configs.reload()
 
 
 async def setup(bot: DiscordBot):
