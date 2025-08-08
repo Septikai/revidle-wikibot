@@ -56,7 +56,8 @@ class Wiki(commands.Cog):
         for g1, g2 in res:
             text = g1 or g2 
             processed_text = re.sub(r"\s+", " ", text.strip())
-            if len(processed_text) >= MIN_QUERY_LENGTH:
+            if (len(processed_text) >= MIN_QUERY_LENGTH and
+                    (":" not in processed_text or len(processed_text.split(":")[1]) >= MIN_QUERY_LENGTH)):
                 response_data.append((processed_text, False if g1 else True))
         
         if len(response_data) == 0:
