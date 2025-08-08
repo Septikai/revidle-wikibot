@@ -135,13 +135,17 @@ class Wiki(commands.Cog):
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
-        r"""Search for a page, but with snippets
+        """Search for a page, but with snippets
 
         Allowed operators:
         - `*` acts as a wildcard
             - `A*` could match `AP`, `Achievements`, `Animals`, etc
         - `\?` acts as a single character wildcard
-            - `A\?` could match `AP` or `An`, but not `Achievements` or `Animals`"""
+            - `A\?` could match `AP` or `An`, but not `Achievements` or `Animals`
+        - Prepending your query with `Guide:` allows searching specifically for Guide pages.
+            - `Guide:Unity` will match all Guide pages containing the word `unity`    
+        """
+
         if len(query) > self.max_mw_query_len:
             raise commands.UserInputError(f"Search queries cannot be over {self.max_mw_query_len} characters.")
         results = self.bot.wiki.advanced_search(query)
