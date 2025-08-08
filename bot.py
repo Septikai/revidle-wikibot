@@ -68,7 +68,8 @@ class DiscordBot(commands.Bot):
 
         print_coloured(Colour.Yellow, f"Connecting to the wiki...\n")
 
-        self.wiki = WikiInterface(self.configs["secrets"].user_agent, self.configs["constants"].max_mw_query_len)
+        self.wiki = WikiInterface(self.configs["secrets"].user_agent, self.configs["constants"].max_mw_query_len,
+                                  self.configs["constants"].wiki_base_url)
 
         general_config: GeneralConfig = self.configs["general"]
 
