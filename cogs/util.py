@@ -1,5 +1,5 @@
+import random
 import typing
-from random import randint
 
 import discord
 from discord import app_commands
@@ -104,16 +104,8 @@ class Util(commands.Cog):
         await self.bot.wait_until_ready()
 
     async def toggle_bot_status(self):
-        watching = ["discord.gg/apEk7SUCTB", "discord.gg/onigaming"]
-        rand = randint(0, 5)
-        if rand in [1, 2]:
-            await self.bot.change_presence(
-                activity=discord.Activity(type=discord.ActivityType.watching, name=watching[rand]))
-        elif rand == 2:
-            await self.bot.change_presence(activity=discord.Game(name="Revolution Idle"))
-        else:
-            text = ("Reading" if rand == 3 else "Writing" if rand == 4 else "Maintaining") + " Revolution Idle Wiki"
-            await self.bot.change_presence(activity=discord.CustomActivity(name=text))
+        options = ["Watching discord.gg/apEk7SUCTB", "Watching discord.gg/onigaming", "Playing Revolution Idle", "Reading Revolution Idle Wiki", "Writing Revolution Idle Wiki", "Maintaining Revolution Idle Wiki"]
+        await self.bot.change_presence(activity=discord.CustomActivity(name=random.choice(options)))
 
     @commands.command(name="ping")
     async def ping_command(self, ctx: commands.Context):
