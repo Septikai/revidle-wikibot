@@ -6,10 +6,7 @@
       "disabled_events": [],
       "permissions": {
         "all": {},
-        "cogs": {
-          "util": {},
-          "wiki": {}
-        },
+        "cogs": {},
         "commands": {},
         "events": {}
       }
