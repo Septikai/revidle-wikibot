@@ -1,9 +1,10 @@
 import re
-from typing import List, Union
+from typing import List, Union, Callable
 
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
+from discord.ext.commands.cog import MISSING, FuncT
 
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig
@@ -34,15 +35,22 @@ class Wiki(commands.Cog):
         self.on_message_cache.clear()
 
     @commands.Cog.listener()
-    async def on_message(self, payload):
+    async def on_message(self, message: discord.Message):
         """Send links when prompted with a message containing text enclosed in [[]] or {{}}.
 
         [[]] will not embed, {{}} will.
 
-        :param payload: the message payload"""
-        if payload.author.bot:
+        :param message: the message that was sent"""
+        # Check if this message should be processed
+        if message.author.bot:
             return
-        msg = payload.content
+        ctx = await self.bot.get_context(message)
+        check = await self.bot.settings.get_permissions_check(ctx, event_type="on_message_wiki_links")
+        if not check.evaluate(ctx):
+            return
+
+
+        msg = message.content
 
         # [[x]] = capture group g1, {{x}} = capture group g2
         res = re.findall(
@@ -108,7 +116,7 @@ class Wiki(commands.Cog):
 
         # At least one query isn't cached
         if any([query.lower() not in self.on_message_cache for (query, _) in response_data]):
-            async with (payload.channel.typing()):
+            async with (message.channel.typing()):
                 msg = format_msg(response_data)
 
         # All queries are cached
@@ -116,7 +124,7 @@ class Wiki(commands.Cog):
             msg = format_msg(response_data)
 
         if msg != "":
-            await payload.channel.send(msg, mention_author=False)
+            await message.channel.send(msg, mention_author=False)
 
     @commands.hybrid_command(name="search")
     @app_commands.describe(query="The query to search for")

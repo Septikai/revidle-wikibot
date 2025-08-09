@@ -11,29 +11,26 @@ T = typing.TypeVar("T")
 
 async def from_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Union[typing.Dict, str]]) -> typing.List[str]:
     expr = []
-    left = initial["left"]
-    if isinstance(left, dict):
-        expr.extend(["(", *(await from_dict(ctx, left)), ")"])
-    else:
-        if left[0] == "r":
-            expr.append(await commands.RoleConverter().convert(ctx, left[1:]))
-        elif left[0] == "c":
-            expr.append(await commands.GuildChannelConverter().convert(ctx, left[1:]))
+
+    async def handle_branch(branch):
+        if isinstance(branch, dict):
+            return ["(", *(await from_dict(ctx, branch)), ")"]
+        if branch[0] == "r":
+            return [await commands.RoleConverter().convert(ctx, branch[1:])]
+        elif branch[0] == "c":
+            return [await commands.GuildChannelConverter().convert(ctx, branch[1:])]
+        return []
+
     cond = initial["condition"]
+    if cond != "NOT":
+        expr.extend(await handle_branch(initial["left"]))
     if cond == "AND":
         expr.append("&")
     elif cond == "OR":
         expr.append("|")
     elif cond == "NOT":
         expr.append("!")
-    right = initial["right"]
-    if isinstance(right, dict):
-        expr.extend(["(", *(await from_dict(ctx, right)), ")"])
-    else:
-        if right[0] == "r":
-            expr.append(await commands.RoleConverter().convert(ctx, right[1:]))
-        elif right[0] == "c":
-            expr.append(await commands.GuildChannelConverter().convert(ctx, right[1:]))
+    expr.extend(await handle_branch(initial["right"]))
     return expr
 
 async def parse_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Union[typing.Dict, str]]):

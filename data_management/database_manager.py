@@ -107,11 +107,11 @@ class MongoInterface:
             kwargs["_id"] = id_
         # TODO: insert into database
         #  raise error if it fails to add
-        await self._collection.insert_one(kwargs)
-        self._all_loaded = False
-        if "id_" in kwargs:
+        if "_id" in kwargs:
             self._data[kwargs["_id"]] = CollectionEntry(kwargs)
-        else:
+        self._all_loaded = False
+        await self._collection.insert_one(kwargs)
+        if "_id" not in kwargs:
             # TODO: use the id mongo generates
             pass
 
@@ -120,17 +120,17 @@ class MongoInterface:
             raw_entry = await self._collection.find_one({"_id": id_})
             if raw_entry is None:
                 raise ValueError(f"Invalid database entry ID: {id_}")
-        entry = await self._collection.update_one({"_id": id_}, {"$set": kwargs})
         self._data[id_] = CollectionEntry(await self._collection.find_one({"_id": id_}))
+        entry = await self._collection.update_one({"_id": id_}, {"$set": kwargs})
 
     async def remove_one(self, id_: str):
         if id_ not in self._data:
             raw_entry = await self._collection.find_one({"_id": id_})
             if raw_entry is None:
                 raise ValueError(f"Invalid database entry ID: {id_}")
-        await self._collection.delete_one({"_id": id_})
         if id_ in self._data:
             del self._data[id_]
+        await self._collection.delete_one({"_id": id_})
 
 
 class DatabaseManager:
