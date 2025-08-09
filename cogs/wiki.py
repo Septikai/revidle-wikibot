@@ -46,7 +46,7 @@ class Wiki(commands.Cog):
             return
         ctx = await self.bot.get_context(message)
         check = await self.bot.settings.get_permissions_check(ctx, event_type="on_message_wiki_links")
-        if not check.evaluate(ctx):
+        if check is not None and not check.evaluate(ctx):
             return
 
 
