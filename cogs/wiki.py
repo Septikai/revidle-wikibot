@@ -149,7 +149,7 @@ class Wiki(commands.Cog):
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
     async def advanced_search(self, ctx, *, query: str):
-        """Search for a page, but with snippets
+        r"""Search for a page, but with snippets
 
         Allowed operators:
         - `*` acts as a wildcard
