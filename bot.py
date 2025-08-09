@@ -15,6 +15,7 @@ from data_management.database_manager import DatabaseManager
 from data_management.settings_interface import SettingsInterface
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
+from helpers import logic
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
 from helpers.utils import dev_only
 
@@ -116,7 +117,8 @@ bot: DiscordBot = DiscordBot(config_manager, database_manager, settings_manager,
 
 @bot.check
 async def global_permissions_check(ctx: commands.Context):
-    return True
+    check = await bot.settings.get_permissions_check(ctx)
+    return True if check is None else check.evaluate(ctx)
 
 
 @bot.event

@@ -4,6 +4,14 @@
       "prefix": "-",
       "disabled_commands": [],
       "disabled_events": [],
-      "permissions": {}
+      "permissions": {
+        "all": {},
+        "cogs": {
+          "util": {},
+          "wiki": {}
+        },
+        "commands": {},
+        "events": {}
+      }
   }
 }

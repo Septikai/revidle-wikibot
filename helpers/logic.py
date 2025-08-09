@@ -3,7 +3,45 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 
+import discord.abc
+from discord.ext import commands
+
 T = typing.TypeVar("T")
+
+
+async def from_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Union[typing.Dict, str]]) -> typing.List[str]:
+    expr = []
+    left = initial["left"]
+    if isinstance(left, dict):
+        expr.extend(["(", *(await from_dict(ctx, left)), ")"])
+    else:
+        if left[0] == "r":
+            expr.append(await commands.RoleConverter().convert(ctx, left[1:]))
+        elif left[0] == "c":
+            expr.append(await commands.GuildChannelConverter().convert(ctx, left[1:]))
+    cond = initial["condition"]
+    if cond == "AND":
+        expr.append("&")
+    elif cond == "OR":
+        expr.append("|")
+    elif cond == "NOT":
+        expr.append("!")
+    right = initial["right"]
+    if isinstance(right, dict):
+        expr.extend(["(", *(await from_dict(ctx, right)), ")"])
+    else:
+        if right[0] == "r":
+            expr.append(await commands.RoleConverter().convert(ctx, right[1:]))
+        elif right[0] == "c":
+            expr.append(await commands.GuildChannelConverter().convert(ctx, right[1:]))
+    return expr
+
+async def parse_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Union[typing.Dict, str]]):
+    expr = await from_dict(ctx, initial)
+    return BooleanLogic.OperationBuilder(expr,
+                                         lambda item, ctx: ctx.channel == item if
+                                         isinstance(item, discord.abc.GuildChannel) else
+                                         item in ctx.author.roles).build()
 
 
 class BooleanLogic:

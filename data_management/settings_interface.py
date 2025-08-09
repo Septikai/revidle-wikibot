@@ -1,6 +1,9 @@
 import typing
 
-from data_management.database_manager import MongoInterface, CollectionEntry
+from discord.ext import commands
+
+from data_management.database_manager import MongoInterface
+from helpers import logic
 
 
 class SettingsInterface(MongoInterface):
@@ -8,6 +11,7 @@ class SettingsInterface(MongoInterface):
     def __init__(self, collection: str, defaults: dict):
         super().__init__(collection)
         self.defaults = defaults
+        self._cached_checks: dict[str, dict] = {}
 
     def __getitem__(self, id_: int):
         return self.__getattr__(str(id_))
@@ -33,3 +37,69 @@ class SettingsInterface(MongoInterface):
 
     async def remove_one(self, id_: int):
         await super().remove_one(str(id_))
+
+    async def get_permissions_check(self, ctx: commands.Context):
+        # Initialise vars
+        permissions = (await self.get_one(ctx.guild.id))["permissions"]
+        to_cache = []
+        parsed_command = None
+        parsed_cog = None
+        parsed_all = None
+        checks = []
+
+        # Search cache
+        if str(ctx.guild.id) in self._cached_checks:
+            guild_cache = self._cached_checks[str(ctx.guild.id)]
+            if "all" in guild_cache:
+                parsed_all = guild_cache["all"]
+            else:
+                to_cache.append(1)
+            if "cogs" in guild_cache and ctx.command.cog_name in guild_cache["cogs"]:
+                parsed_cog = guild_cache["cogs"][ctx.command.cog_name]
+            else:
+                to_cache.append(2)
+            if "commands" in guild_cache and ctx.command.qualified_name in guild_cache["commands"]:
+                parsed_command = guild_cache["commands"][ctx.command.qualified_name]
+            else:
+                to_cache.append(3)
+        else:
+            to_cache.extend([0, 1, 2, 3])
+
+        # Parse checks from settings
+        if parsed_all is None and "all" in permissions and len(permissions["all"].items()) != 0:
+            parsed_all = await logic.parse_dict(ctx, permissions["all"])
+        if parsed_cog is None and "cogs" in permissions and ctx.command.cog_name in permissions["cogs"]:
+            parsed_cog = await logic.parse_dict(ctx, permissions["cogs"][ctx.command.cog_name])
+        if parsed_command is None and "commands" in permissions and ctx.command.qualified_name in permissions["cogs"]:
+            parsed_command = await logic.parse_dict(ctx, permissions["commands"][ctx.command.qualified_name])
+
+        # Append and cache checks
+        if 0 in to_cache:
+            self._cached_checks[str(ctx.guild.id)] = {
+                "all": None,
+                "cogs": {},
+                "commands": {}
+            }
+        if parsed_all is not None:
+            checks.append(parsed_all)
+            if 1 in to_cache:
+                self._cached_checks[str(ctx.guild.id)]["all"] = parsed_all
+        if parsed_cog is not None:
+            checks.append(parsed_cog)
+            if 2 in to_cache:
+                self._cached_checks[str(ctx.guild.id)]["cogs"][ctx.command.cog_name] = parsed_cog
+        if parsed_command is not None:
+            checks.append(parsed_command)
+            if 3 in to_cache:
+                self._cached_checks[str(ctx.guild.id)]["commands"][ctx.command.qualified_name] = parsed_command
+
+        # Build and return check
+        if len(checks) == 1:
+            return checks[0]
+        if len(checks) == 2:
+            return logic.BooleanLogic.AndOperator(checks[0], checks[1])
+        if len(checks) == 3:
+            return logic.BooleanLogic.AndOperator(checks[0], logic.BooleanLogic.AndOperator(checks[1], checks[2]))
+        return None
+
+
