@@ -222,14 +222,20 @@ class Util(commands.Cog):
                 msg = await commands.MessageConverter().convert(ctx, link)
             except commands.MessageNotFound:
                 raise commands.UserInputError
-            await make_tag(name, msg.content, response=ctx.interaction.response if ctx.interaction else None)
+            content = msg.content
+            for img in msg.attachments:
+                content += "\n" + img.url
+            await make_tag(name, content, response=ctx.interaction.response if ctx.interaction else None)
 
         # Create tag with message command
         elif ctx.interaction is None:
             await ctx.send("What should the tag be?")
             msg = await self.bot.wait_for("message",
                                           check=lambda m: m.channel == ctx.channel and m.author == ctx.author)
-            await make_tag(name, msg.content)
+            content = msg.content
+            for img in msg.attachments:
+                content += "\n" + img.url
+            await make_tag(name, content)
 
         # Create tag with modal via application command
         else:
