@@ -326,7 +326,6 @@ class Util(commands.Cog):
                 return await ctx.send(f"Tag `{name}` does not exist!",
                                       allowed_mentions=discord.AllowedMentions.none())
             tag = tags[0]
-            return await ctx.send(f"Tag `{name}` does not exist!")
 
         embed = (discord.Embed(title="Tag Info", description=f"**{tag.id_}**")
                  .add_field(name="Aliases", value=", ".join(tag.aliases) if len(tag.aliases) > 0 else "None",
