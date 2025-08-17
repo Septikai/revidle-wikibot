@@ -1,5 +1,6 @@
 import random
 import typing
+import time
 
 import discord
 from discord import app_commands
@@ -7,9 +8,8 @@ from discord.ext import commands, tasks
 
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
-from helpers import logic
 from helpers.modals import TagModal
-from helpers.utils import Embed, create_pages, dev_only, RoleConverter
+from helpers.utils import Embed, create_pages, dev_only
 from helpers.views import PaginationView#, SettingsMenuView
 
 
@@ -130,49 +130,8 @@ class Util(commands.Cog):
         embed.set_thumbnail(url="https://i.imgur.com/qbyZc2j.gif")
         await ctx.send(embed=embed)
 
-    @commands.command(name="rolelist")
-    async def role_list(self, ctx: commands.Context, *, text: str):
-        """
-        Check how many users have a specific role (or combination of roles).
-        Usable characters:
-        `role & role` - users with both roles
-        `role | role` - users with either role
-        `!role` - users without that role
-        `()` - can be used to format the query
-        """
-        special_tokens = "&|!()"
-        tokens = []
-        builder = ""
-        for char in text:
-            if char in special_tokens:
-                tokens.append(builder)
-                tokens.append(char)
-                builder = ""
-            else:
-                builder += char
-        tokens.append(builder)
-        empty = []
-        for i, item in enumerate(tokens):
-            if item == "" or item.isspace():
-                empty.append(item)
-        for i in empty:
-            tokens.remove(i)
-        for i, item in enumerate(tokens):
-            if item not in special_tokens:
-                tokens[i] = await RoleConverter().convert(ctx, item.strip())
-        count = 0
-        tree = logic.BooleanLogic.OperationBuilder(tokens, lambda item, items: item in items).build()
-        async with ctx.typing():
-            for member in ctx.guild.members:
-                if tree.evaluate(member.roles):
-                    count += 1
-        embed = discord.Embed(title="Role List Search", colour=discord.Colour.og_blurple())
-        embed.add_field(name="Query", value=tree.pprint(lambda x: x.mention), inline=False)
-        embed.add_field(name="Member count", value=f"{count:,}", inline=False)
-        await ctx.send(embed=embed)
-
     async def tag_check(self, tag_name: str, content: str, aliases: typing.List[str] = None,
-                        response: discord.InteractionResponse = None):
+                        response: discord.InteractionResponse = None, editing: bool = False):
         """Prevents all invalid tags
 
         :type tag_name: the name of the tag
@@ -184,19 +143,16 @@ class Util(commands.Cog):
         if len(content) == 0:
             raise commands.UserInputError("Cannot make a tag with an empty body!")
 
-        # Handle aliases
-        if aliases is None:
-            aliases = []
-        else:
-            # Prevent duplicate names and aliases across tags
-            all_tags = await self.bot.collections["tags"].get_all()
-            duplicates = [name_alias for tag in all_tags
-                          for name_alias in [tag["id_"], *tag["aliases"]]
-                          if name_alias in aliases or name_alias == tag_name]
-            if len(duplicates) > 0:
-                if response is not None:
-                    await response.defer()
-                raise commands.UserInputError(f"A tag already exists with name or alias: `{duplicates[0]}`")
+        # Prevent duplicate names and aliases across tags
+        all_tags = await self.bot.collections["tags"].get_all()
+        duplicates = [name_alias for tag in all_tags
+                      for name_alias in [tag["id_"], *tag["aliases"]]
+                      if (name_alias in aliases or name_alias == tag_name)
+                      and (not editing or tag_name != tag["id_"])]
+        if len(duplicates) > 0:
+            if response is not None:
+                await response.defer()
+            raise commands.UserInputError(f"A tag already exists with name or alias: `{duplicates[0]}`")
 
         # Prevent a tag having the same name and alias
         if tag_name in aliases:
@@ -233,11 +189,16 @@ class Util(commands.Cog):
 
         async def make_tag(tag_name: str, content: str, aliases: typing.List[str] = None,
                            response: discord.InteractionResponse = None):
+            if aliases is None:
+                aliases = []
+
             # Prevent invalid tags
             await self.tag_check(tag_name, content, aliases, response)
 
             # Add tag, return with error message on duplicate
-            await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases)
+            await self.bot.collections["tags"].insert_one(tag_name, content=content, aliases=aliases,
+                                                          author=ctx.author.id, created_at=round(time.time()),
+                                                          last_editor=ctx.author.id, last_edit=round(time.time()))
 
             # Confirm tag creation
             if response is None:
@@ -333,11 +294,15 @@ class Util(commands.Cog):
 
         async def edit_tag(tag_name: str, content: str, aliases: typing.List[str],
                            response: discord.InteractionResponse):
+            if aliases is None:
+                aliases = []
+
             # Prevent invalid tags
-            await self.tag_check(tag_name, content, aliases, response)
+            await self.tag_check(tag_name, content, aliases, response, editing=True)
 
             # Modify tag
-            await self.bot.collections["tags"].update_one(tag_name, content=content, aliases=aliases)
+            await self.bot.collections["tags"].update_one(tag_name, content=content, aliases=aliases,
+                                                          last_editor=ctx.author.id, last_edit=round(time.time()))
 
             # Confirm tag modification
             await response.send_message("Tag edited successfully!", ephemeral=True)
@@ -347,6 +312,26 @@ class Util(commands.Cog):
         await ctx.interaction.response.send_modal(modal)
         await modal.wait()
         await edit_tag(name, modal.content, modal.aliases, response=modal.response)
+
+    @tag_group.command(name="info")
+    @app_commands.describe(name="The tag to edit")
+    async def tag_info(self, ctx: commands.Context, name: str):
+        try:
+            tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
+        except ValueError:
+            return await ctx.send(f"Tag `{name}` does not exist!",
+                                  allowed_mentions=discord.AllowedMentions.none())
+
+        embed = (discord.Embed(title="Tag Info", description=f"**{tag.id_}**")
+                 .add_field(name="Aliases", value=", ".join(tag.aliases) if len(tag.aliases) > 0 else "None",
+                            inline=False)
+                 .add_field(name="Creator", value=ctx.guild.get_member(tag.author).mention)
+                 .add_field(name="Creation Date", value=f"<t:{tag.created_at}:F>")
+                 .add_field(name="", value="")
+                 .add_field(name="Last Editor", value=ctx.guild.get_member(tag.last_editor).mention)
+                 .add_field(name="Edit Date", value=f"<t:{tag.last_edit}:F>")
+                 .add_field(name="", value=""))
+        await ctx.send(embed=embed, ephemeral=True)
 
     # @commands.hybrid_command(name="settings", aliases=["options"])
     # @dev_only

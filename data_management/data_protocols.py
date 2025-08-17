@@ -26,3 +26,7 @@ class TagCollectionEntry(Protocol):
     id_: str
     content: str
     aliases: list[str]
+    author: int
+    created_at: int
+    last_editor: int
+    last_edit: int
