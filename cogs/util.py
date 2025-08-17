@@ -24,17 +24,20 @@ class HelpCommand(commands.HelpCommand):
         for cog in mapping.keys():
             # if (cog.hidden and not staff_check(self.context)) or cog.get_commands() == []:
             #     continue
-            if cog is not None:
-                help_embed.add_field(name=f"__{cog.qualified_name.title()}:__", value=cog.__doc__, inline=False)
-            else:
-                help_embed.add_field(name=f"__Dev Commands:__", value="Development commands for bot control.",
-                                     inline=False)
+            if any(await command.can_run(self.context) for command in mapping.get(cog)):
+                if cog is not None:
+                    help_embed.add_field(name=f"__{cog.qualified_name.title()}:__", value=cog.__doc__, inline=False)
+                else:
+                    help_embed.add_field(name=f"__Dev Commands:__", value="Development commands for bot control.",
+                                        inline=False)
         help_embed.set_footer(text="Created by @septikai and @chillcatto")
         await self.send_help_embed(help_embed)
 
     # help <command>
     async def send_command_help(self, command: commands.Command):
         """Help for a specific command"""
+        if not await command.can_run(self.context):
+            raise commands.CommandNotFound
         title = command.name.capitalize()
         if len(command.parents) > 0:
             parents = command.parents
@@ -52,6 +55,8 @@ class HelpCommand(commands.HelpCommand):
     # help <group>
     async def send_group_help(self, group: commands.Group):
         """Help for a command group"""
+        if not await group.can_run(self.context):
+            raise commands.CommandNotFound
         title = group.name.capitalize()
         if len(group.parents) > 0:
             parents = group.parents
@@ -64,8 +69,9 @@ class HelpCommand(commands.HelpCommand):
                              value=f"`{self.context.prefix}{group.qualified_name}"
                                    f"{(' ' + group.signature) if group.signature != '' else ''}"
                                    f"`\n\n`<>` represents required arguments\n`[]` represents optional arguments")
+        subcommands = [command.qualified_name for command in group.commands if command.can_run(self.context)]
         help_embed.add_field(name="Subcommands:",
-                             value=f"`{'`, `'.join([command.qualified_name for command in group.commands])}`",
+                             value=f"`{'`, `'.join(subcommands)}`",
                              inline=False)
         await self.send_help_embed(help_embed)
 
@@ -73,14 +79,7 @@ class HelpCommand(commands.HelpCommand):
     async def send_cog_help(self, cog: commands.Cog):
         """Help for a cog"""
         help_embed = discord.Embed(title=cog.qualified_name.title(), description=cog.__doc__, colour=0x00FF00)
-        cog_commands = []
-        for command in cog.get_commands():
-            try:
-                if not await command.can_run(self.context):
-                    continue
-                cog_commands.append(command.name)
-            except commands.CheckFailure:
-                continue
+        cog_commands = [command.qualified_name for command in cog.get_commands() if await command.can_run(self.context)]
         help_embed.add_field(name="Commands:", value=(", ".join(sorted(cog_commands))) if cog_commands else None)
         await self.send_help_embed(help_embed)
 
