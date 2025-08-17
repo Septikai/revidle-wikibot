@@ -224,7 +224,7 @@ class Util(commands.Cog):
                 raise commands.UserInputError
             content = msg.content
             for img in msg.attachments:
-                content += "\n" + img.url
+                content += "\n" + img.url.rsplit("?", 1)[0]
             await make_tag(name, content, response=ctx.interaction.response if ctx.interaction else None)
 
         # Create tag with message command
@@ -234,7 +234,7 @@ class Util(commands.Cog):
                                           check=lambda m: m.channel == ctx.channel and m.author == ctx.author)
             content = msg.content
             for img in msg.attachments:
-                content += "\n" + img.url
+                content += "\n" + img.url.rsplit("?", 1)[0]
             await make_tag(name, content)
 
         # Create tag with modal via application command
