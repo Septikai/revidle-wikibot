@@ -54,8 +54,8 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         msg = ""
         desc = f"Correct usage: `{ctx.prefix}{ctx.command.qualified_name} {ctx.command.signature}`"
         if isinstance(ctx.command, (commands.Group, commands.HybridGroup)):
-            desc = "This is a group command, and this error message needs improving.\n" + desc
-            msg = "<@540939418933133312>"
+            subcommands = "`, `".join([command.name for command in ctx.command.commands])
+            desc = desc + f"\nValid Subcommands:\n`{subcommands}`"
             # TODO: improve this and remove `msg` when improved
         if len(error.args) != 0:
             desc = f"{error.args[0]}\n\n" + desc
