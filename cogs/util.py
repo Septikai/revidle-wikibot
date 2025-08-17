@@ -24,7 +24,11 @@ class HelpCommand(commands.HelpCommand):
         for cog in mapping.keys():
             # if (cog.hidden and not staff_check(self.context)) or cog.get_commands() == []:
             #     continue
-            if any(await command.can_run(self.context) for command in mapping.get(cog)):
+            try:
+                any_runnable = any([await command.can_run(self.context) for command in mapping.get(cog)])
+            except commands.CheckFailure:
+                continue
+            if any_runnable:
                 if cog is not None:
                     help_embed.add_field(name=f"__{cog.qualified_name.title()}:__", value=cog.__doc__, inline=False)
                 else:
@@ -69,7 +73,7 @@ class HelpCommand(commands.HelpCommand):
                              value=f"`{self.context.prefix}{group.qualified_name}"
                                    f"{(' ' + group.signature) if group.signature != '' else ''}"
                                    f"`\n\n`<>` represents required arguments\n`[]` represents optional arguments")
-        subcommands = [command.qualified_name for command in group.commands if command.can_run(self.context)]
+        subcommands = [command.qualified_name for command in group.commands if await command.can_run(self.context)]
         help_embed.add_field(name="Subcommands:",
                              value=f"`{'`, `'.join(subcommands)}`",
                              inline=False)
@@ -78,6 +82,13 @@ class HelpCommand(commands.HelpCommand):
     # help <cog>
     async def send_cog_help(self, cog: commands.Cog):
         """Help for a cog"""
+        any_runnable = False
+        try:
+            any_runnable = any([await command.can_run(self.context) for command in cog.get_commands()])
+        except commands.CheckFailure:
+            pass
+        if not any_runnable:
+            raise commands.CommandNotFound
         help_embed = discord.Embed(title=cog.qualified_name.title(), description=cog.__doc__, colour=0x00FF00)
         cog_commands = [command.qualified_name for command in cog.get_commands() if await command.can_run(self.context)]
         help_embed.add_field(name="Commands:", value=(", ".join(sorted(cog_commands))) if cog_commands else None)
