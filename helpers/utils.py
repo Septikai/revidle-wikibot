@@ -5,11 +5,11 @@ from datetime import datetime
 import discord
 from discord.ext import commands
 
-from data_management.data_protocols import ConstantsConfig
+from data_management.data_protocols import ConstantsConfig, GeneralConfig
 
 
 def tag_editor_check(ctx: typing.Union[commands.Context, discord.Interaction]):
-    """Ensures the person running a command is one of the bot devs"""
+    """Ensures the person running a command is allowed to modify tags"""
     constants_config: ConstantsConfig = ctx.bot.configs["constants"]
     if not str(ctx.guild.id) in constants_config.tag_editors:
         return False
@@ -26,11 +26,19 @@ def host_check(ctx: typing.Union[commands.Context, discord.Interaction]):
     constants_config: ConstantsConfig = ctx.bot.configs["constants"]
     return ctx.author.id == constants_config.host_user
 
+def stable_bot_check(ctx: typing.Union[commands.Context, discord.Interaction]):
+    """Ensures the running bot is not the development bot"""
+    # This is done by checking the default prefix is "-"
+    general_config: GeneralConfig = ctx.bot.configs["constants"]
+    return general_config.default_settings["prefix"] == "-"
+
 tag_editors_only = commands.check(tag_editor_check)
 
 dev_only = commands.check(dev_check)
 
 host_only = commands.check(host_check)
+
+stable_bot_only = commands.check(stable_bot_check)
 
 
 class Embed(discord.Embed):

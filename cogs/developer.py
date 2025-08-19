@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from bot import DiscordBot
-from data_management.data_protocols import ConstantsConfig
+from data_management.data_protocols import ConstantsConfig, GeneralConfig
 from helpers.utils import host_only, dev_only
 
 
@@ -25,6 +25,8 @@ class Developer(commands.Cog):
         :param bot: The DiscordBot instance.
         """
         self.bot = bot
+        general_config: GeneralConfig = self.bot.configs["general"]
+        self.prefix = general_config.default_settings["prefix"]
         super().__init__()
 
     @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e"])
@@ -93,7 +95,7 @@ class Developer(commands.Cog):
         if ctx.author.id == constants_config.host_user:
             await ctx.send(f"```\n{subprocess.check_output(args.split(' ')).decode('utf-8')[:1900]}\n```")
 
-    @commands.command(name="update", hidden=True, aliases=["-u"])
+    @commands.command(name="update", hidden=True, aliases=["-u", "~u"])
     @dev_only
     async def update_bot(self, ctx: commands.Context, branch: str = "main"):
         """Update the bot from git"""
