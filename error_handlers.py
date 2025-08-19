@@ -51,18 +51,16 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
 
     if isinstance(error, commands.UserInputError):
         # await ctx.send_help(ctx.command)
-        msg = ""
         desc = f"Correct usage: `{ctx.prefix}{ctx.command.qualified_name} {ctx.command.signature}`"
         if isinstance(ctx.command, (commands.Group, commands.HybridGroup)):
             subcommands = "`, `".join([command.name for command in ctx.command.commands])
             desc = desc + f"\nValid Subcommands:\n`{subcommands}`"
-            # TODO: improve this and remove `msg` when improved
         if len(error.args) != 0:
             desc = f"{error.args[0]}\n\n" + desc
         embed = discord.Embed(title=":x: Invalid Input!",
                               description=desc,
                               color=0xff0000)
-        return await ctx.send(msg, embed=embed)
+        return await ctx.send(embed=embed)
 
     if isinstance(error, commands.NoPrivateMessage):
         try:

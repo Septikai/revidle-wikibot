@@ -1,10 +1,9 @@
 import re
-from typing import List, Union, Callable
+from typing import List, Union
 
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from discord.ext.commands.cog import MISSING, FuncT
 
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig

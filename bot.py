@@ -15,7 +15,6 @@ from data_management.database_manager import DatabaseManager
 from data_management.settings_interface import SettingsInterface
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
-from helpers import logic
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
 from helpers.utils import dev_only
 
@@ -37,7 +36,6 @@ MONGO_COLLECTIONS = {
 
 
 # TODO: add some form of logging somewhere
-# TODO: add a cog for runtime config control
 
 
 class DiscordBot(commands.Bot):
@@ -219,10 +217,6 @@ async def restart_bot(ctx: commands.Context):
     await ctx.send("`Restarting bot...`")
     subprocess.Popen(["sh", "restart_bot.sh"], stdout=open("/dev/null", "w"), stderr=open("/dev/null", "w"),
                      preexec_fn=os.setpgrp)
-
-
-# TODO: add a global check to restrict command usage outside of allowed areas for people without specific roles
-# see previous codebase for details
 
 if __name__ == "__main__":
     bot_secrets: BotSecretsConfig = config_manager["secrets"]

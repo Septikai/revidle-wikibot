@@ -1,6 +1,5 @@
 import typing
 
-import discord
 from discord.ext import commands
 
 from data_management.database_manager import MongoInterface

@@ -1,6 +1,6 @@
 from mediawiki import MediaWiki
 from mediawiki.utilities import memoize
-from typing import Union, List, Tuple, Optional
+from typing import List, Optional
 from pydantic import BaseModel, field_validator
 import re
 import html

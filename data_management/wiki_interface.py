@@ -3,7 +3,6 @@ from typing import List
 import mediawiki
 from mediawiki import MediaWikiPage
 
-from data_management.data_protocols import ConstantsConfig
 from helpers.wiki_lib_patch import PatchedMediaWiki, SearchResult
 
 
