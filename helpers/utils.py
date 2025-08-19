@@ -29,7 +29,7 @@ def host_check(ctx: typing.Union[commands.Context, discord.Interaction]):
 def stable_bot_check(ctx: typing.Union[commands.Context, discord.Interaction]):
     """Ensures the running bot is not the development bot"""
     # This is done by checking the default prefix is "-"
-    general_config: GeneralConfig = ctx.bot.configs["constants"]
+    general_config: GeneralConfig = ctx.bot.configs["general"]
     return general_config.default_settings["prefix"] == "-"
 
 tag_editors_only = commands.check(tag_editor_check)
