@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 from data_management.data_protocols import TagCollectionEntry
 from bot import DiscordBot
 from helpers.modals import TagModal
-from helpers.utils import Embed, create_pages, dev_only
+from helpers.utils import Embed, create_pages, dev_only, tag_editors_only
 from helpers.views import PaginationView#, SettingsMenuView
 
 
@@ -192,6 +192,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="create")
     @app_commands.describe(name="The name for the tag", link="The message to turn into a tag")
+    @tag_editors_only
     async def tag_create(self, ctx: commands.Context, name: str, link: typing.Optional[str] = None):
         """Create a new tag"""
         if not name.isalnum():
@@ -246,6 +247,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="delete", aliases=["remove"])
     @app_commands.describe(name="The tag to remove")
+    @tag_editors_only
     async def tag_delete(self, ctx: commands.Context, name: str):
         """Delete a tag"""
         await self.bot.collections["tags"].remove_one(name)
@@ -295,6 +297,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="edit")
     @app_commands.describe(name="The tag to edit")
+    @tag_editors_only
     async def tag_edit(self, ctx: commands.Context, name: str):
         """Edit an existing tag"""
 

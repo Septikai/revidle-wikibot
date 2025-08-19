@@ -8,6 +8,14 @@ from discord.ext import commands
 from data_management.data_protocols import ConstantsConfig
 
 
+def tag_editor_check(ctx: typing.Union[commands.Context, discord.Interaction]):
+    """Ensures the person running a command is one of the bot devs"""
+    constants_config: ConstantsConfig = ctx.bot.configs["constants"]
+    if not str(ctx.guild.id) in constants_config.tag_editors:
+        return False
+    roles = role_ids(ctx.author.roles)
+    return list_one(roles, *constants_config.tag_editors[str(ctx.guild.id)])
+
 def dev_check(ctx: typing.Union[commands.Context, discord.Interaction]):
     """Ensures the person running a command is one of the bot devs"""
     constants_config: ConstantsConfig = ctx.bot.configs["constants"]
@@ -17,6 +25,8 @@ def host_check(ctx: typing.Union[commands.Context, discord.Interaction]):
     """Ensures the person running a command is the bot host"""
     constants_config: ConstantsConfig = ctx.bot.configs["constants"]
     return ctx.author.id == constants_config.host_user
+
+tag_editors_only = commands.check(tag_editor_check)
 
 dev_only = commands.check(dev_check)
 
@@ -104,3 +114,12 @@ def create_pages(data: list[str]):
         page.set_footer(text=f"page {i + 1} of {len(pages)}")
         page.add_field(name="", value=values[i], inline=False)
     return pages
+
+def role_ids(roles):
+    return [z.id for z in roles]
+
+def list_one(_list, *items):
+    for item in items:
+        if item in _list:
+            return True
+    return False
