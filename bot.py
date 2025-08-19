@@ -1,4 +1,6 @@
+import os
 import pathlib
+import subprocess
 import time
 from typing import Optional, Literal
 
@@ -10,9 +12,11 @@ from discord.ext.commands import Greedy
 from data_management.config_manager import ConfigManager
 from data_management.data_protocols import GeneralConfig, CogsConfig, BotSecretsConfig
 from data_management.database_manager import DatabaseManager
+from data_management.settings_interface import SettingsInterface
 from data_management.wiki_interface import WikiInterface
 from error_handlers import handle_message_command_error, handle_app_command_error
 from helpers.graphics import print_coloured, Colour, print_startup_progress_bar
+from helpers.utils import dev_only
 
 intents = discord.Intents.default()
 intents.members = True
@@ -20,23 +24,24 @@ intents.message_content = True
 
 BOT_CONFIGS = {
     "secrets",
-    "cogs",
     "general",
+    "cogs",
     "constants"
 }
 
 MONGO_COLLECTIONS = {
+    "settings",
     "tags"
 }
 
 
 # TODO: add some form of logging somewhere
-# TODO: add a cog for runtime config control
 
 
 class DiscordBot(commands.Bot):
     """The DiscordBot instance."""
-    def __init__(self, configs: ConfigManager, collections: DatabaseManager, *args, **kwargs):
+    def __init__(self, configs: ConfigManager, collections: DatabaseManager, settings: SettingsInterface,
+                 *args, **kwargs):
         """Initialise the DiscordBot instance.
 
         :param configs: The ConfigManager to handle bot config files.
@@ -50,6 +55,7 @@ class DiscordBot(commands.Bot):
         self.configs: ConfigManager = configs
         self.collections: DatabaseManager = collections
         self.wiki: WikiInterface = None
+        self.settings: SettingsInterface = settings
 
         # Make the help command not be case-sensitive
         self._BotBase__cogs = commands.core._CaseInsensitiveDict()
@@ -65,7 +71,8 @@ class DiscordBot(commands.Bot):
 
         print_coloured(Colour.Yellow, f"Connecting to the wiki...\n")
 
-        self.wiki = WikiInterface(self.configs["secrets"].user_agent)
+        self.wiki = WikiInterface(self.configs["secrets"].user_agent, self.configs["constants"].max_mw_query_len,
+                                  self.configs["constants"].wiki_base_url)
 
         general_config: GeneralConfig = self.configs["general"]
 
@@ -84,8 +91,15 @@ class DiscordBot(commands.Bot):
 
         # initialise tickets
 
-        print_coloured(Colour.Green, f"Cogs loaded \"{general_config.message_commands_prefix}\"")
+        print_coloured(Colour.Green, f"Cogs loaded \"{general_config.default_settings['prefix']}\"")
         print_coloured(Colour.Green, f"√ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √")
+
+async def get_prefix(_bot: DiscordBot, message: discord.Message):
+    try:
+        return (await _bot.settings.get_one(message.guild.id)).prefix
+    except ValueError:
+        return _bot.configs["general"].default_settings['prefix']
+
 
 
 config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIGS)
@@ -93,10 +107,16 @@ config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIG
 database_manager: DatabaseManager = DatabaseManager(config_manager["secrets"].db_connection_string,
                                                     "revidle-wikibot", MONGO_COLLECTIONS)
 
-prefix = config_manager["general"].message_commands_prefix
+settings_manager: SettingsInterface = SettingsInterface(database_manager.get_settings(), config_manager["general"].default_settings)
 
-bot: DiscordBot = DiscordBot(config_manager, database_manager, command_prefix=prefix,
-                             case_insensitive=True, intents=intents)
+bot: DiscordBot = DiscordBot(config_manager, database_manager, settings_manager,
+                             command_prefix=get_prefix, case_insensitive=True, intents=intents)
+
+
+@bot.check
+async def global_permissions_check(ctx: commands.Context):
+    check = await bot.settings.get_permissions_check(ctx)
+    return True if check is None else check.evaluate(ctx)
 
 
 @bot.event
@@ -167,7 +187,7 @@ async def sync(ctx: commands.Context, guilds: Greedy[discord.Object], spec: Opti
 
 
 @bot.command(name="reload", aliases=["-r"])
-@commands.is_owner()
+@dev_only
 async def reload_cogs(ctx: commands.Context):
     """Reloads cogs while bot is still online."""
     cogs = bot.configs["cogs"].cogs
@@ -178,12 +198,25 @@ async def reload_cogs(ctx: commands.Context):
             print_startup_progress_bar(i + 1, len(cogs), f"Loading:{' ' * (20 - len(cog))} {cog}")
             await bot.reload_extension(f"cogs.{cog}")
     print_coloured(Colour.Yellow, f"\n\nInitialising bot, please wait...\n")
-    print_coloured(Colour.Green, f"Cogs loaded \"{bot.configs['general'].message_commands_prefix}\"")
-    await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>", allowed_mentions=discord.AllowedMentions(users=False))
+    print_coloured(Colour.Green, f"Cogs loaded \"{bot.configs['general'].default_settings['prefix']}\"")
+    await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>",
+                   allowed_mentions=discord.AllowedMentions(users=False))
 
+@bot.command(name="reloadconfig", aliases=["-rc"])
+@dev_only
+async def reload_config(ctx: commands.Context):
+    """Reloads configs while bot is still online"""
+    bot.configs.reload()
+    await ctx.send(f"`Configs reloaded by:` <@{ctx.author.id}>",
+                   allowed_mentions=discord.AllowedMentions(users=False))
 
-# TODO: add a global check to restrict command usage outside of allowed areas for people without specific roles
-# see previous codebase for details
+@bot.command(name="restart")
+@dev_only
+async def restart_bot(ctx: commands.Context):
+    """Restarts the bot via a shell script"""
+    await ctx.send("`Restarting bot...`")
+    subprocess.Popen(["sh", "restart_bot.sh"], stdout=open("/dev/null", "w"), stderr=open("/dev/null", "w"),
+                     preexec_fn=os.setpgrp)
 
 if __name__ == "__main__":
     bot_secrets: BotSecretsConfig = config_manager["secrets"]

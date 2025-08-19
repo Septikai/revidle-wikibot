@@ -22,7 +22,7 @@ class ConfigView:
 
         return value
 
-    def __reload(self):
+    def __reload__(self):
         self._data = _load_config_data(self._filepath)
 
 
@@ -32,7 +32,7 @@ class ConfigManager:
 
     Configs are immutable and can only be read by the bot.
 
-    Reloading the manager automatically reloads all used configs; don't call ``__reload()`` on configs directly.
+    Reloading the manager automatically reloads all used configs; don't call ``__reload__()`` on configs directly.
 
     Basic use (for adding a config to a cog):
 
@@ -86,11 +86,9 @@ class ConfigManager:
         return new_config
 
     def reload(self) -> None:
-        """
-        Reloads all configs currently managed by this manager.
-        """
+        """Reloads all configs currently managed by this manager."""
         for config in self._loaded_configs.values():
-            config.__reload()
+            config.__reload__()
 
 
 def _read_json_file(filepath: pathlib.Path) -> dict:

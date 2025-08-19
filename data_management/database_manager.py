@@ -40,17 +40,16 @@ class MongoInterface:
         self._all_loaded = False
         self._data: dict[str, CollectionEntry] = {}
 
-        # TODO: ensure the collection actually exists
-
     def __getattr__(self, id_: str):
         entry = self._data.get(id_)
         if entry is None:
             raise ValueError(f"Invalid database entry ID: {id_}\nAccessing in this method only includes cached entries"
                              f"\nPlease use {self.get_one.__qualname__} to avoid that")
 
-            pass
-
         return entry
+
+    def get_collection(self):
+        return self._collection
 
     def reload(self):
         self._data = {}
@@ -101,39 +100,44 @@ class MongoInterface:
 
         return data.values()
 
-    async def insert_one(self, id_: str = "", **kwargs):
+    async def insert_one(self, id_: str, **kwargs):
         if id_ != "":
             if id_ in self._data:
                 raise ValueError(f"Entry already exists with ID: {id_}")
             kwargs["_id"] = id_
         # TODO: insert into database
         #  raise error if it fails to add
-        await self._collection.insert_one(kwargs)
-        self._all_loaded = False
-        if "id_" in kwargs:
+        if "_id" in kwargs:
             self._data[kwargs["_id"]] = CollectionEntry(kwargs)
-        else:
+        self._all_loaded = False
+        await self._collection.insert_one(kwargs)
+        if "_id" not in kwargs:
             # TODO: use the id mongo generates
             pass
 
     async def update_one(self, id_: str, **kwargs):
         if id_ not in self._data:
-            raise ValueError(f"Invalid database entry ID: {id_}")
+            raw_entry = await self._collection.find_one({"_id": id_})
+            if raw_entry is None:
+                raise ValueError(f"Invalid database entry ID: {id_}")
         entry = await self._collection.update_one({"_id": id_}, {"$set": kwargs})
-        self._data[id_] = CollectionEntry(entry)
+        self._data[id_] = CollectionEntry(await self._collection.find_one({"_id": id_}))
 
     async def remove_one(self, id_: str):
         if id_ not in self._data:
-            raise ValueError(f"Invalid database entry ID: {id_}")
+            raw_entry = await self._collection.find_one({"_id": id_})
+            if raw_entry is None:
+                raise ValueError(f"Invalid database entry ID: {id_}")
+        if id_ in self._data:
+            del self._data[id_]
         await self._collection.delete_one({"_id": id_})
-        del self._data[id_]
 
 
 class DatabaseManager:
     """
     Base class for working with MongoDB databases.
 
-    Reloading the manager automatically reloads all used databases; don't call ``__reload()`` on collections directly.
+    Reloading the manager automatically reloads all used databases; don't call ``__reload__()`` on collections directly.
 
     Basic use (for adding a database to a cog):
 
@@ -141,7 +145,7 @@ class DatabaseManager:
 
     - Add your collection to the list of loaded collections; see bot.py
 
-    - Retrieve your config in cog's __init__ method::
+    - Retrieve your collection in cog's __init__ method::
 
         self.collection: MyCollection = bot.collections["my_collection"]
 
@@ -152,6 +156,7 @@ class DatabaseManager:
 
     def __init__(self, connection_string: str, db_name: str, to_load: Set[str]):
         self._loaded_collections: dict[str, MongoInterface] = {}
+        self.settings_initialised = False
 
         self._cluster = AsyncIOMotorClient(connection_string)
         self._db = self._cluster[db_name]
@@ -166,11 +171,18 @@ class DatabaseManager:
         :param item: The collection id to retrieve.
         :return: The collection. That collection is refreshed automatically on reload.
         """
+        if item == "settings" and self.settings_initialised:
+            raise ValueError("Settings can only be accessed through `bot.settings`, not through `bot.collections`.")
         database = self._loaded_collections.get(item)
         if database is None:
             raise ValueError(f"Invalid database id: {item}")
 
         return database
+
+    def get_settings(self):
+        settings = self["settings"]
+        self.settings_initialised = True
+        return settings.get_collection()
 
     def load(self, collection_id: str):
         """
@@ -187,7 +199,7 @@ class DatabaseManager:
         self._loaded_collections[collection_id] = new_collection
         return new_collection
 
-    def reload(self) -> None:
+    def __reload__(self) -> None:
         """
         Reloads all collections currently managed by this manager.
         """

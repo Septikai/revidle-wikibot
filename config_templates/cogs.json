@@ -2,7 +2,7 @@
   "__comment": "The list of cogs to load at startup. Editing this config requires a restart; use other mechanisms to load and unload cogs at runtime.",
   "cogs": [
     "util",
-    "admin",
+    "developer",
     "wiki"
   ]
 }
