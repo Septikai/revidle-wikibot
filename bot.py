@@ -105,7 +105,7 @@ async def get_prefix(_bot: DiscordBot, message: discord.Message):
 config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIGS)
 
 database_manager: DatabaseManager = DatabaseManager(config_manager["secrets"].db_connection_string,
-                                                    "revidle-wikibot", MONGO_COLLECTIONS)
+                                                    config_manager["secrets"].db_name, MONGO_COLLECTIONS)
 
 settings_manager: SettingsInterface = SettingsInterface(database_manager.get_settings(), config_manager["general"].default_settings)
 
@@ -186,7 +186,7 @@ async def sync(ctx: commands.Context, guilds: Greedy[discord.Object], spec: Opti
     await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
 
-@bot.command(name="reload", aliases=["-r"])
+@bot.command(name="reload", aliases=["-r", "~r"])
 @dev_only
 async def reload_cogs(ctx: commands.Context):
     """Reloads cogs while bot is still online."""
@@ -202,7 +202,7 @@ async def reload_cogs(ctx: commands.Context):
     await ctx.send(f"`Cogs reloaded by:` <@{ctx.author.id}>",
                    allowed_mentions=discord.AllowedMentions(users=False))
 
-@bot.command(name="reloadconfig", aliases=["-rc"])
+@bot.command(name="reloadconfig", aliases=["-rc", "~rc"])
 @dev_only
 async def reload_config(ctx: commands.Context):
     """Reloads configs while bot is still online"""

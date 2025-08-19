@@ -4,6 +4,7 @@ from typing import Protocol, Union
 class BotSecretsConfig(Protocol):
     token: str
     db_connection_string: str
+    db_name: str
     user_agent: str
 
 

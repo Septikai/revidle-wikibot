@@ -7,6 +7,7 @@ from discord import app_commands
 
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig
+from helpers.utils import stable_bot_check
 from helpers.views import SearchResultsView, PaginatedSearchView
 
 class Wiki(commands.Cog):
@@ -44,6 +45,8 @@ class Wiki(commands.Cog):
         if message.author.bot:
             return
         ctx = await self.bot.get_context(message)
+        if not stable_bot_check(ctx):
+            return
         check = await self.bot.settings.get_permissions_check(ctx, event_type="on_message_wiki_links")
         if check is not None and not check.evaluate(ctx):
             return
