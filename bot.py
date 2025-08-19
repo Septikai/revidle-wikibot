@@ -105,7 +105,7 @@ async def get_prefix(_bot: DiscordBot, message: discord.Message):
 config_manager: ConfigManager = ConfigManager(pathlib.Path("config"), BOT_CONFIGS)
 
 database_manager: DatabaseManager = DatabaseManager(config_manager["secrets"].db_connection_string,
-                                                    "revidle-wikibot", MONGO_COLLECTIONS)
+                                                    config_manager["secrets"].db_name, MONGO_COLLECTIONS)
 
 settings_manager: SettingsInterface = SettingsInterface(database_manager.get_settings(), config_manager["general"].default_settings)
 
