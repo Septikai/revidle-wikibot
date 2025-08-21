@@ -8,6 +8,6 @@ multidict==6.6.4
 yarl==1.20.1
 regex==2025.7.34
 pymediawiki==0.7.5
-pymongo==4.14.0
+pymongo==4.14.1
 motor==3.7.1
 pydantic==2.11.7
