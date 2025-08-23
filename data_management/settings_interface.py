@@ -27,7 +27,7 @@ class SettingsInterface(MongoInterface):
         await super().insert_one(str(id_), **self.defaults)
 
     async def update_one(self, id_: int, **kwargs):
-        await super().update_one(str(id_))
+        await super().update_one(str(id_), **kwargs)
 
     async def get_all(self, filter_: dict[str, typing.Any] = None):
         return await super().get_all(filter_)
