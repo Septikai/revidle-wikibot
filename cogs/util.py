@@ -173,6 +173,7 @@ class Util(commands.Cog):
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_group(self, ctx: commands.Context, name: str = ""):
         """The tag command group
 
@@ -256,6 +257,7 @@ class Util(commands.Cog):
 
     @tag_group.command(name="list")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_list(self, ctx: commands.Context):
         """List all tags"""
         tags: list[TagCollectionEntry] = await self.bot.collections["tags"].get_all()
@@ -267,6 +269,7 @@ class Util(commands.Cog):
     @tag_group.command(name="search", aliases=["find"])
     @app_commands.describe(name="The tag to search for")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_search(self, ctx: commands.Context, name: str):
         """Search for a specific tag"""
         if not name.isalnum():
@@ -279,6 +282,7 @@ class Util(commands.Cog):
 
     @tag_group.group(name="alias")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_alias_group(self, ctx: commands.Context):
         """The tag aliases command group
 
@@ -288,6 +292,7 @@ class Util(commands.Cog):
     @tag_alias_group.command(name="list", aliases=["ls"])
     @app_commands.describe(name="The tag to check aliases of")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_alias_list(self, ctx: commands.Context, name: str):
         """Check aliases for a tag"""
         if name == "":
@@ -340,6 +345,7 @@ class Util(commands.Cog):
     @tag_group.command(name="info")
     @app_commands.describe(name="The tag to edit")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_info(self, ctx: commands.Context, name: str):
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)

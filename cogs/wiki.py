@@ -131,6 +131,7 @@ class Wiki(commands.Cog):
     @commands.hybrid_command(name="search")
     @app_commands.describe(query="The query to search for")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def search(self, ctx, *, query: str):
         """Search for a specific page"""
         if len(query) > self.max_mw_query_len:
@@ -152,6 +153,7 @@ class Wiki(commands.Cog):
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
     @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def advanced_search(self, ctx, *, query: str):
         r"""Search for a page, but with snippets
 
