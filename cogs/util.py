@@ -1,3 +1,4 @@
+import asyncio
 import random
 import typing
 import time
@@ -188,7 +189,8 @@ class Util(commands.Cog):
             all_tags = await self.bot.collections["tags"].get_all()
             tags = [z for z in all_tags if name in z["aliases"]]
             if len(tags) == 0:
-                return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+                await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+                return
             tag = tags[0]
         await ctx.send(tag.content, allowed_mentions=mentions)
 
@@ -293,7 +295,8 @@ class Util(commands.Cog):
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
-            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            return
         msg = f"Aliases of tag `{tag.id_}`:\n`" + ("`, `".join(tag.aliases) if len(tag.aliases) >= 1 else "None") + "`"
         await ctx.send(msg, allowed_mentions=mentions, ephemeral=True)
 
@@ -305,13 +308,15 @@ class Util(commands.Cog):
 
         # Create tag with message command
         if ctx.interaction is None:
-            return await ctx.send("Tags can only be edited via Application (Slash) Commands.")
+            await ctx.send("Tags can only be edited via Application (Slash) Commands.")
+            return
 
         mentions = discord.AllowedMentions.none()
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
-            return await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
+            return
 
         async def edit_tag(tag_name: str, content: str, aliases: typing.List[str],
                            response: discord.InteractionResponse):
@@ -344,8 +349,9 @@ class Util(commands.Cog):
             all_tags = await self.bot.collections["tags"].get_all()
             tags = [z for z in all_tags if name in z["aliases"]]
             if len(tags) == 0:
-                return await ctx.send(f"Tag `{name}` does not exist!",
-                                      allowed_mentions=discord.AllowedMentions.none())
+                await ctx.send(f"Tag `{name}` does not exist!",
+                               allowed_mentions=discord.AllowedMentions.none())
+                return
             tag = tags[0]
 
         embed = (discord.Embed(title="Tag Info", description=f"**{tag.id_}**")

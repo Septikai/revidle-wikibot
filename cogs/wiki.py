@@ -139,8 +139,9 @@ class Wiki(commands.Cog):
         async with ctx.typing():
             results = self.bot.wiki.search(query)
         if len(results) == 0:
-            return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
-                                   allowed_mentions=discord.AllowedMentions.none())
+            await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
+                            allowed_mentions=discord.AllowedMentions.none())
+            return
         view = SearchResultsView(results, author=ctx.author)
         result_str = "\n".join([f"- {result}" for result in results]).replace("_", r"\_")
         view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
@@ -170,8 +171,9 @@ class Wiki(commands.Cog):
             raise commands.UserInputError(f"Search queries cannot be over {self.max_mw_query_len} characters.")
         results = self.bot.wiki.advanced_search(query)
         if len(results) == 0:
-            return await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
-                                   allowed_mentions=discord.AllowedMentions.none())
+            await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
+                            allowed_mentions=discord.AllowedMentions.none())
+            return
         view = PaginatedSearchView(results, author=ctx.author)
         view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True)
         await view.wait()
