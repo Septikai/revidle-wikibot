@@ -141,10 +141,11 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 
 @bot.command()
 @commands.is_owner()
-async def sync(ctx: commands.Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*"]] = None):
+async def sync(ctx: commands.Context, guilds: Greedy[discord.Object],
+               spec: Optional[Literal["~", "*", "^"]] = None) -> None:
     """Sync commands to discord.
 
-    Umbra's sync command, found with `?tag umbras sync command` in dpy discord.
+    Umbra's sync command, found here: https://about.abstractumbra.dev/discord.py/2023/01/29/sync-command-example.html.
     Used to sync app commands from the bot to discord.
 
     How it works:
