@@ -40,7 +40,10 @@ class SettingsInterface(MongoInterface):
 
     async def get_permissions_check(self, ctx: commands.Context, event_type: str = ""):
         # Initialise vars
-        permissions = (await self.get_one(ctx.guild.id))["permissions"]
+        if ctx.guild is None:
+            permissions = self.defaults["permissions"]
+        else:
+            permissions = (await self.get_one(ctx.guild.id))["permissions"]
         to_cache = []
         parsed_all = None
         parsed_cog = None
@@ -49,7 +52,7 @@ class SettingsInterface(MongoInterface):
         checks = []
 
         # Search cache
-        if str(ctx.guild.id) in self._cached_checks:
+        if ctx.guild is not None and str(ctx.guild.id) in self._cached_checks:
             guild_cache = self._cached_checks[str(ctx.guild.id)]
             if "all" in guild_cache:
                 parsed_all = guild_cache["all"]
@@ -70,7 +73,7 @@ class SettingsInterface(MongoInterface):
                 else:
                     to_cache.append(4)
 
-        else:
+        elif ctx.guild is not None:
             to_cache.extend([0, 1, 2, 3, 4])
 
         # Parse checks from settings
