@@ -173,7 +173,7 @@ class Util(commands.Cog):
 
     @commands.hybrid_group(name="tag", fallback="send")
     @app_commands.describe(name="The tag to send")
-    @app_commands.allowed_installs(users=True)
+    @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def tag_group(self, ctx: commands.Context, name: str = ""):
         """The tag command group
