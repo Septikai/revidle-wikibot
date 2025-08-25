@@ -27,7 +27,8 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         else:
             fmt = " and ".join(missing)
         _message = "I need the **{}** permission(s) to run this command.".format(fmt)
-        return await ctx.send(_message)
+        await ctx.send(_message)
+        return
 
     if isinstance(error, commands.MissingRole) or isinstance(error, commands.MissingAnyRole):
         if isinstance(error, commands.MissingAnyRole):
@@ -37,17 +38,20 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         roles = [ctx.guild.get_role(z).mention for z in roles]
         embed = discord.Embed(title=":x: Error! You must have one of these roles: :x:",
                               description="\n".join(roles), colour=0xff0000)
-        return await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
+        return
 
     if isinstance(error, commands.DisabledCommand):
-        return await ctx.send("This command has been disabled.")
+        await ctx.send("This command has been disabled.")
+        return
 
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send("This command is on cooldown, please retry in {}s.".format(math.ceil(error.retry_after)))
         return
 
     if isinstance(error, commands.MissingPermissions):
-        return await ctx.send("You do not have permission to use this command.")
+        await ctx.send("You do not have permission to use this command.")
+        return
 
     if isinstance(error, commands.UserInputError):
         # await ctx.send_help(ctx.command)
@@ -60,7 +64,8 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         embed = discord.Embed(title=":x: Invalid Input!",
                               description=desc,
                               color=0xff0000)
-        return await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
+        return
 
     if isinstance(error, commands.NoPrivateMessage):
         try:
@@ -70,16 +75,20 @@ async def handle_message_command_error(ctx: commands.Context, err: commands.Comm
         return
 
     if isinstance(error, commands.CheckFailure):
+        if ctx.interaction is not None:
+            await ctx.interaction.response.send_message("You do not have permission to use this command.",
+                                                        ephemeral=True)
         return
 
     if isinstance(error, discord.Forbidden):
-        return await ctx.send("I do not have permission to perform an action for that command")
+        await ctx.send("I do not have permission to perform an action for that command")
+        return
 
     print("Error Caught:")
     print(error)
 
 
-def handle_app_command_error(interaction: discord.Interaction, err: app_commands.AppCommandError):
+async def handle_app_command_error(interaction: discord.Interaction, err: app_commands.AppCommandError):
     """Handles errors raised during execution of application commands.
 
     :param interaction: The interaction that is being handled.
@@ -90,5 +99,6 @@ def handle_app_command_error(interaction: discord.Interaction, err: app_commands
         return
 
     error = getattr(err, "original", err)
+
     print("Error Caught:")
     print(error)

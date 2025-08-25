@@ -136,7 +136,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
     :param interaction: The interaction that is being handled.
     :param error: The exception that was raised.
     """
-    handle_app_command_error(interaction, error)
+    await handle_app_command_error(interaction, error)
 
 
 @bot.command()
