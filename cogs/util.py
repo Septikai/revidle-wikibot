@@ -1,4 +1,4 @@
-import asyncio
+import logging
 import random
 import typing
 import time
@@ -99,6 +99,20 @@ class HelpCommand(commands.HelpCommand):
         """Send the help embed"""
         await self.context.send(embed=embed)
 
+def format_tag_log_msg(type_: str, author: str, name: str, content: str = "", old_content: str = "",
+                       old_aliases: list[str] = None, aliases: list[str] = None):
+    msg = f"{type_} - {author}\nNAME: {name}\n"
+    if type_ == "CREATE":
+        msg += f"CONTENT:\n{content}"
+    if type_ == "DELETE":
+        msg += f"ALIASES: {', '.join(old_aliases)}\nCONTENT:\n{old_content}"
+    if type_ == "UPDATE":
+        if sorted(old_aliases) != sorted(aliases):
+            msg += f"\nOLD ALIASES: {', '.join(old_aliases)}\nNEW ALIASES: {', '.join(aliases)}\n"
+        if old_content != content:
+            msg += f"\nOLD CONTENT:\n{old_content}\n\nNEW CONTENT:\n{content}\n"
+    return msg
+
 
 class Util(commands.Cog):
     """Utility commands for general use."""
@@ -115,11 +129,28 @@ class Util(commands.Cog):
         self.bot.help_command = HelpCommand()
         bot.help_command.cog = self
 
+        # Create logger
+        self.tag_logger = logging.getLogger("tag_logger")
+        self.tag_logger.setLevel(logging.INFO)
+
+        # Create file handler for logger
+        handler = logging.FileHandler(filename="logs/tag_logs.log")
+        handler.setLevel(logging.INFO)
+
+        # Create formatter for handler
+        formatter = logging.Formatter("-----\nTAG LOG: %(asctime)s\n%(message)s\nEND LOG\n-----\n",
+                                      datefmt="%d/%m/%Y %H:%M:%S")
+        handler.setFormatter(formatter)
+
+        # Add handler to logger
+        self.tag_logger.addHandler(handler)
+
         self.auto_toggle_status.start()
 
     def cog_unload(self):
         """Called when the cog is unloaded"""
         self.bot.help_command = self._original_help_command
+        self.tag_logger.handlers[0].close()
 
     @tasks.loop(minutes=30)
     async def auto_toggle_status(self):
@@ -215,6 +246,10 @@ class Util(commands.Cog):
                                                           author=ctx.author.id, created_at=round(time.time()),
                                                           last_editor=ctx.author.id, last_edit=round(time.time()))
 
+            # Log tag creation
+            self.tag_logger.info(format_tag_log_msg("CREATE", ctx.author.name, tag_name, content=content))
+
+
             # Confirm tag creation
             if response is None:
                 await ctx.reply("Tag created!", mention_author=False)
@@ -254,7 +289,21 @@ class Util(commands.Cog):
     @tag_editors_only
     async def tag_delete(self, ctx: commands.Context, name: str):
         """Delete a tag"""
+        # Get the tag
+        try:
+            tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
+        except ValueError:
+            await ctx.reply(f"Tag `{name}` does not exist!", allowed_mentions=discord.AllowedMentions.none(),
+                            ephemeral=True)
+            return
+
+        # Delete tag
         await self.bot.collections["tags"].remove_one(name)
+
+        # Log tag deletion
+        self.tag_logger.info(format_tag_log_msg("DELETE", ctx.author.name, name, old_aliases=tag.aliases,
+                                                old_content=tag.content))
+
         await ctx.reply(f"Tag `{name}` deleted!", ephemeral=True)
 
     @tag_group.command(name="list")
@@ -329,6 +378,11 @@ class Util(commands.Cog):
             # Modify tag
             await self.bot.collections["tags"].update_one(tag_name, content=content, aliases=aliases,
                                                           last_editor=ctx.author.id, last_edit=round(time.time()))
+
+            # Log tag edit
+            self.tag_logger.info(format_tag_log_msg("UPDATE", ctx.author.name, tag_name,
+                                                    old_aliases=tag.aliases, aliases=aliases,
+                                                    old_content=tag.content, content=content))
 
             # Confirm tag modification
             await response.send_message("Tag edited successfully!", ephemeral=True)
