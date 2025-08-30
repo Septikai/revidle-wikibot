@@ -4,5 +4,7 @@
   "dev_users": [-1],
   "wiki_base_url": "https://revolutionidle.wiki.gg/",
   "max_mw_query_len": 300,
-  "tag_editors":  {}
+  "tag_editors":  {},
+  "support_server": -1,
+  "feedback_logs": -1
 }

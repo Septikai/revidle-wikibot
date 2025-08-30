@@ -51,8 +51,11 @@ class MongoInterface:
     def get_collection(self):
         return self._collection
 
-    def reload(self):
-        self._data = {}
+    def reload(self, guild: str = None):
+        if guild is None:
+            self._data = {}
+        else:
+            self._data.pop(guild)
         self._all_loaded = False
 
     async def get_one(self, id_: str):

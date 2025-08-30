@@ -2,6 +2,7 @@ from typing import List, Union
 
 import discord
 
+from helpers.modals import FeedbackModal
 from helpers.wiki_lib_patch import SearchResult
 
 
@@ -121,7 +122,7 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
         if "view" in kwargs.keys() and kwargs["view"] is None:
             return await super().update(*args, **kwargs)
         self.remove_item(self.dropdown)
-        # NOTE: This is really cursed, maybe expand into a for loop?
+        # TODO: This is really cursed, maybe expand into a for loop?
         self.dropdown = SearchResultsDropdown(
             [result.title for result in (self.results[self.current_page*self.RESULTS_PER_PAGE:(self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE if
              self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE < len(self.results) else len(self.results))])])
@@ -129,6 +130,62 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
         await super().update(view=self, *args, **kwargs)
 
 
+class FeedbackView(BaseView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.feedback_modal = FeedbackModal()
+
+    @discord.ui.button(label="Open Form", style=discord.ButtonStyle.blurple)
+    async def open_feedback_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(self.feedback_modal)
+        await self.feedback_modal.wait()
+        self.stop()
+
+
+# class SettingsDropdown(discord.ui.Select):
+#     def __init__(self, options: List[str]):
+#         options = [discord.SelectOption(label=option) for option in options]
+#         super().__init__(placeholder="Categories",
+#                          max_values=1, min_values=1, options=options)
+#
+#     async def callback(self, interaction: discord.Interaction):
+#         await interaction.response.defer()
+#
+#
 # class SettingsMenuView(BaseView):
 #     def __init__(self, *args, **kwargs):
 #         super().__init__(*args, **kwargs)
+#
+#         # Settings Modified
+#         self._modified_settings = {}
+#
+#         # Settings Editor Setup
+#         self._prev_page = None
+#         self._current_page = "base"
+#         self._embeds = {
+#             "base": discord.Embed(title="Settings",
+#                                   description="Interactive settings editor. Allows modification of bot settings for the"
+#                                               "server at runtime, enabling more useful and configurable settings to "
+#                                               "exist.\n\nSelect a settings category to continue.",
+#                                   colour=0x00FF00)
+#         }
+#         self._pages = ["Base", "Core", "Commands", "Events", "Permissions"]
+#
+#         # Discord View Setup
+#         self._category_dropdown = SettingsDropdown(self._pages[:1])
+#
+#         self.add_item(self._category_dropdown)
+#
+#     def get_embed(self):
+#         return self._embeds[self._current_page]
+#
+#     def setup_page_view(self):
+#         pass
+#
+#     async def change_page(self, page: str = "base"):
+#         self._prev_page = self._current_page
+#         self._current_page = page
+#         await self.update(embed=self.get_embed(), view=self)
+
+
+

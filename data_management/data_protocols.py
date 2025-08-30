@@ -22,6 +22,8 @@ class ConstantsConfig(Protocol):
     wiki_base_url: str
     max_mw_query_len: int
     tag_editors: dict[str, list[int]]
+    support_server: int
+    feedback_logs: int
 
 
 class TagCollectionEntry(Protocol):

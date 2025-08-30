@@ -6,12 +6,13 @@ import time
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
+from discord.ext.commands import guild_only
 
-from data_management.data_protocols import TagCollectionEntry
+from data_management.data_protocols import TagCollectionEntry, ConstantsConfig
 from bot import DiscordBot
 from helpers.modals import TagModal
 from helpers.utils import Embed, create_pages, dev_only, tag_editors_only
-from helpers.views import PaginationView#, SettingsMenuView
+from helpers.views import PaginationView, FeedbackView#, SettingsMenuView
 
 
 class HelpCommand(commands.HelpCommand):
@@ -419,23 +420,48 @@ class Util(commands.Cog):
                  .add_field(name="", value=""))
         await ctx.send(embed=embed, ephemeral=True)
 
+    @commands.hybrid_command(name="feedback", aliases=["suggest", "botsuggest", "report", "reportbug", "bugreport"])
+    async def feedback_command(self, ctx: commands.Context):
+        feedback_view = FeedbackView(author=ctx.author)
+        await ctx.reply(content="This form allows you to submit feedback for the Revolution Idle Wiki Bot.\nPlease only"
+                                " use this for suggestions and bug reports. Abusing this form will result in being "
+                                "blacklisted from accessing it.", view=feedback_view, ephemeral=True)
+        await feedback_view.wait()
+        if feedback_view.feedback_modal.response is not None:
+            # Send Feedback
+            constants_config: ConstantsConfig = self.bot.configs["constants"]
+            channel = self.bot.get_guild(constants_config.support_server).get_channel(constants_config.feedback_logs)
+            embed = Embed(title=feedback_view.feedback_modal.feedback_type)
+            embed.add_field(name="User", value=ctx.author.name, inline=False)
+            embed.add_field(name="Guild",value="None" if ctx.guild is None else f"{ctx.guild.name} ({ctx.guild.id})",
+                            inline=False)
+            embed.add_field(name="Feedback Type", value=feedback_view.feedback_modal.feedback_type, inline=False)
+            embed.add_field(name="Feedback Summary", value=feedback_view.feedback_modal.feedback_summary, inline=False)
+            embed.add_field(name="Feedback Description", value=feedback_view.feedback_modal.feedback_description,
+                            inline=False)
+            embed.timestamp_now()
+            await embed.embed_colour()
+            await channel.send(embed=embed)
+            await feedback_view.feedback_modal.response.send_message("Feedback submitted! Thank you for taking the time"
+                                                                     " to help improve the bot :)", ephemeral=True)
+
+
+
     # @commands.hybrid_command(name="settings", aliases=["options"])
     # @dev_only
+    # @guild_only()
     # async def edit_settings(self, ctx: commands.Context):
     #     """Provides an interactive settings editor to allow you to edit bot settings at runtime
     #
     #     This enables more useful and configurable settings to exist, and for the bot to behave differently in different
     #     servers."""
-    #     embed = discord.Embed(title="Settings",
-    #                           description="Interactive settings editor. Allows modification of bot settings for the"
-    #                                       "server at runtime, enabling more useful and configurable settings to exist.",
-    #                           colour=0x00FF00)
     #     view = SettingsMenuView(author=ctx.author)
-    #     view.message = await ctx.reply(embed=embed, view=view, ephemeral=True,
-    #                                    allowed_mentions=discord.AllowedMentions.none())
+    #     view.message = await ctx.reply(embed=view.get_embed(), view=view, ephemeral=True,
+    #                                         allowed_mentions=discord.AllowedMentions.none())
     #     await view.wait()
-    #     await view.message.delete()
-    #     self.bot.configs.reload()
+    #     await view.message.edit(content="Settings updated successfully!", embed=None, view=None)
+    #     self.bot.settings.reload(ctx.guild)
+
 
 
 async def setup(bot: DiscordBot):
