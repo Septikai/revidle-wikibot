@@ -32,3 +32,17 @@ class TagCollectionEntry(Protocol):
     created_at: int
     last_editor: int
     last_edit: int
+
+
+class SettingsEntry(Protocol):
+    class PermissionsCondition(Protocol):
+        condition: str
+        left: Union[str, "PermissionsCondition"]
+        right: Union[str, "PermissionsCondition"]
+
+    id_: str
+    prefix: str
+    disabled_commands: list[str]
+    disabled_events: list[str]
+    permissions: dict[str, Union[PermissionsCondition,
+                                dict[str, PermissionsCondition]]]

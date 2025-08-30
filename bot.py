@@ -2,11 +2,12 @@ import os
 import pathlib
 import subprocess
 import time
+from datetime import datetime
 from typing import Optional, Literal
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import Greedy
 
 from data_management.config_manager import ConfigManager
@@ -35,9 +36,6 @@ MONGO_COLLECTIONS = {
 }
 
 
-# TODO: add some form of logging somewhere
-
-
 class DiscordBot(commands.Bot):
     """The DiscordBot instance."""
     def __init__(self, configs: ConfigManager, collections: DatabaseManager, settings: SettingsInterface,
@@ -59,6 +57,11 @@ class DiscordBot(commands.Bot):
 
         # Make the help command not be case-sensitive
         self._BotBase__cogs = commands.core._CaseInsensitiveDict()
+
+        # Set time for DB clean
+        # This could be set in the past to clean immediately, but that could cause issues if
+        # restarting several times in quick succession
+        self.last_database_clean = datetime.now()
 
     async def setup_hook(self):
         """Runs on bot startup to load cogs and initialise the bot."""
@@ -89,7 +92,8 @@ class DiscordBot(commands.Bot):
         time.sleep(0.3)
         print_coloured(Colour.Yellow, f"\n\nInitialising bot, please wait...\n")
 
-        # initialise tickets
+        # Start DB clean task loop
+        clean_database.start()
 
         print_coloured(Colour.Green, f"Cogs loaded \"{general_config.default_settings['prefix']}\"")
         print_coloured(Colour.Green, f"√ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √ √")
@@ -117,6 +121,26 @@ bot: DiscordBot = DiscordBot(config_manager, database_manager, settings_manager,
 async def global_permissions_check(ctx: commands.Context):
     check = await bot.settings.get_permissions_check(ctx)
     return True if check is None else check.evaluate(ctx)
+
+
+
+@tasks.loop(hours=24)
+async def clean_database():
+    # Only clean the db if it's been 7 days since the last clean
+    # Privacy Policy states 14 days, so this accounts for bot restarts delaying the clean by up to a week
+    if (datetime.now() - bot.last_database_clean).days < 7:
+        return
+    # Get all settings
+    settings = await bot.settings.get_all()
+    to_remove = []
+    # Find servers the bot is no longer in
+    for entry in settings:
+        guild = bot.get_guild(int(entry.id_))
+        if guild is None:
+            to_remove.append(int(entry.id_))
+    # Remove data for servers the bot is no longer in
+    for id_ in to_remove:
+        await bot.settings.remove_one(id_)
 
 
 @bot.event
