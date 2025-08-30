@@ -29,7 +29,7 @@ class Developer(commands.Cog):
         self.prefix = general_config.default_settings["prefix"]
         super().__init__()
 
-    @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e"])
+    @commands.command(name="eval", hidden=True, aliases=["eval_fn", "-e", "~e"])
     @host_only
     async def eval_fn_command(self, ctx: commands.Context, *, cmd: str):
         """Evaluates input. Will be removed when bot development is mostly complete.
