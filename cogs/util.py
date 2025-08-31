@@ -397,6 +397,7 @@ class Util(commands.Cog):
     @tag_group.command(name="info")
     @app_commands.describe(name="The tag to edit")
     async def tag_info(self, ctx: commands.Context, name: str):
+        """Get information about a specified tag"""
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
@@ -422,6 +423,9 @@ class Util(commands.Cog):
 
     @commands.hybrid_command(name="feedback", aliases=["suggest", "botsuggest", "report", "reportbug", "bugreport"])
     async def feedback_command(self, ctx: commands.Context):
+        """Give feedback for the bot, in the form of bug reports and suggestions.
+
+        This provides a modal form to fill out."""
         feedback_view = FeedbackView(author=ctx.author)
         await ctx.reply(content="This form allows you to submit feedback for the Revolution Idle Wiki Bot.\nPlease only"
                                 " use this for suggestions and bug reports. Abusing this form will result in being "
