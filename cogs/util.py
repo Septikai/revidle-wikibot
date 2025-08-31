@@ -431,7 +431,8 @@ class Util(commands.Cog):
             # Send Feedback
             constants_config: ConstantsConfig = self.bot.configs["constants"]
             channel = self.bot.get_guild(constants_config.support_server).get_channel(constants_config.feedback_logs)
-            embed = Embed(title=feedback_view.feedback_modal.feedback_type)
+            feedback_type = feedback_view.feedback_modal.feedback_type
+            embed = Embed(title=feedback_type, colour=0xFF0000 if feedback_type == "Bug Report" else 0x00FF00)
             embed.add_field(name="User", value=ctx.author.name, inline=False)
             embed.add_field(name="Guild",value="None" if ctx.guild is None else f"{ctx.guild.name} ({ctx.guild.id})",
                             inline=False)
@@ -440,8 +441,10 @@ class Util(commands.Cog):
             embed.add_field(name="Feedback Description", value=feedback_view.feedback_modal.feedback_description,
                             inline=False)
             embed.timestamp_now()
-            await embed.embed_colour()
-            await channel.send(embed=embed)
+            thumbnail = discord.File("assets/bug_64.png" if feedback_type == "Bug Report" else "assets/bot_64.png",
+                                     "thumbnail.png")
+            embed.set_thumbnail(url=f"attachment://thumbnail.png")
+            await channel.send(embed=embed, file=thumbnail)
             await feedback_view.feedback_modal.response.send_message("Feedback submitted! Thank you for taking the time"
                                                                      " to help improve the bot :)", ephemeral=True)
 
