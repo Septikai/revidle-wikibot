@@ -436,7 +436,6 @@ class Util(commands.Cog):
             embed.add_field(name="User", value=ctx.author.name, inline=False)
             embed.add_field(name="Guild",value="None" if ctx.guild is None else f"{ctx.guild.name} ({ctx.guild.id})",
                             inline=False)
-            embed.add_field(name="Feedback Type", value=feedback_view.feedback_modal.feedback_type, inline=False)
             embed.add_field(name="Feedback Summary", value=feedback_view.feedback_modal.feedback_summary, inline=False)
             embed.add_field(name="Feedback Description", value=feedback_view.feedback_modal.feedback_description,
                             inline=False)
