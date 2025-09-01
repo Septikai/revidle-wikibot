@@ -203,7 +203,7 @@ class Util(commands.Cog):
                 await response.defer()
             raise commands.UserInputError(f"A tag cannot have its own name as an alias!")
 
-    @commands.hybrid_group(name="tag", fallback="send")
+    @commands.hybrid_group(name="tag", fallback="send", aliases=["faq"])
     @app_commands.describe(name="The tag to send")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
@@ -305,7 +305,7 @@ class Util(commands.Cog):
         self.tag_logger.info(format_tag_log_msg("DELETE", ctx.author.name, name, old_aliases=tag.aliases,
                                                 old_content=tag.content))
 
-        await ctx.reply(f"Tag `{name}` deleted!", ephemeral=True)
+        await ctx.reply(f"Tag `{name}` deleted!", ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
     @tag_group.command(name="list")
     async def tag_list(self, ctx: commands.Context):
@@ -314,7 +314,8 @@ class Util(commands.Cog):
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
         view = PaginationView(pages, author=ctx.author)
-        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True)
+        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True,
+                                       allowed_mentions=discord.AllowedMentions.none())
 
     @tag_group.command(name="search", aliases=["find"])
     @app_commands.describe(name="The tag to search for")
@@ -326,7 +327,8 @@ class Util(commands.Cog):
         tag_names: list[str] = [tag.id_ for tag in tags]
         pages: list[discord.Embed] = create_pages(tag_names)
         view = PaginationView(pages, author=ctx.author)
-        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True)
+        view.message = await ctx.reply(embed=pages[0], view=view, ephemeral=True,
+                                       allowed_mentions=discord.AllowedMentions.none())
 
     @tag_group.group(name="alias")
     async def tag_alias_group(self, ctx: commands.Context):

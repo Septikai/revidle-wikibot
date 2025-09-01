@@ -126,7 +126,7 @@ class Wiki(commands.Cog):
             msg = format_msg(response_data)
 
         if msg != "":
-            await message.channel.send(msg, mention_author=False)
+            await message.channel.send(msg, mention_author=False, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.hybrid_command(name="search")
     @app_commands.describe(query="The query to search for")
@@ -144,12 +144,13 @@ class Wiki(commands.Cog):
             return
         view = SearchResultsView(results, author=ctx.author)
         result_str = "\n".join([f"- {result}" for result in results]).replace("_", r"\_")
-        view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True)
+        view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True,
+                                       allowed_mentions=discord.AllowedMentions.none())
         await view.wait()
         if view.result is None:
             return
         result = self.bot.wiki.page_or_section_search(view.result)
-        await ctx.reply(result)
+        await ctx.reply(result, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
@@ -175,12 +176,13 @@ class Wiki(commands.Cog):
                             allowed_mentions=discord.AllowedMentions.none())
             return
         view = PaginatedSearchView(results, author=ctx.author)
-        view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True)
+        view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True,
+                                       allowed_mentions=discord.AllowedMentions.none())
         await view.wait()
         if view.result is None:
             return
         result = self.bot.wiki.page_search(view.result)
-        await ctx.reply(result.url, ephemeral=True)
+        await ctx.reply(result.url, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
 
 async def setup(bot: DiscordBot):
