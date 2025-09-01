@@ -19,6 +19,8 @@ async def from_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Unio
             return [await commands.RoleConverter().convert(ctx, branch[1:])]
         elif branch[0] == "c":
             return [await commands.GuildChannelConverter().convert(ctx, branch[1:])]
+        elif branch[0] == "t":
+            return [branch[1:]]
         return []
 
     cond = initial["condition"]
@@ -38,7 +40,9 @@ async def parse_dict(ctx: commands.Context, initial: typing.Dict[str, typing.Uni
     return BooleanLogic.OperationBuilder(expr,
                                          lambda item, ctx: ctx.channel == item if
                                          isinstance(item, discord.abc.GuildChannel) else
-                                         item in ctx.author.roles).build()
+                                         item in ctx.author.roles if isinstance(item, discord.Role) else
+                                         ctx.interaction is not None if item == "SLASH" else
+                                         ctx.interaction is None if item == "MESSAGE" else False).build()
 
 
 class BooleanLogic:
