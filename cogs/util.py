@@ -207,13 +207,15 @@ class Util(commands.Cog):
     @app_commands.describe(name="The tag to send")
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def tag_group(self, ctx: commands.Context, name: str = ""):
+    async def tag_group(self, ctx: commands.Context, *, name: str = ""):
         """The tag command group
 
         Tags can be used to save a message to be sent later on request"""
         if name == "":
             raise commands.UserInputError
         mentions = discord.AllowedMentions.none()
+        if name.split(" ")[0] == "send":
+            name = " ".join(name.split(" ")[1:])
         try:
             tag: TagCollectionEntry = await self.bot.collections["tags"].get_one(name)
         except ValueError:
