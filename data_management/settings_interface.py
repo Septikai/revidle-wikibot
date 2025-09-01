@@ -82,7 +82,8 @@ class SettingsInterface(MongoInterface):
                 parsed_all = await logic.parse_dict(ctx, permissions["all"])
             if parsed_cog is None and "cogs" in permissions and ctx.command.cog_name in permissions["cogs"]:
                 parsed_cog = await logic.parse_dict(ctx, permissions["cogs"][ctx.command.cog_name])
-            if parsed_command is None and "commands" in permissions and ctx.command.qualified_name in permissions["cogs"]:
+            if (parsed_command is None and "commands" in permissions and ctx.command.qualified_name in
+                    permissions["commands"]):
                 parsed_command = await logic.parse_dict(ctx, permissions["commands"][ctx.command.qualified_name])
         else:
             if parsed_event is None and len(permissions["events"].items()) != 0:
