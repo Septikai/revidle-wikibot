@@ -4,7 +4,7 @@ import typing
 import time
 
 import discord
-from discord import app_commands
+from discord import app_commands, MessageType
 from discord.ext import commands, tasks
 from discord.ext.commands import guild_only
 
@@ -226,7 +226,13 @@ class Util(commands.Cog):
                 await ctx.send(f"Tag `{name}` does not exist!", allowed_mentions=mentions)
                 return
             tag = tags[0]
-        await ctx.send(tag.content, allowed_mentions=mentions)
+        if ctx.message.type is MessageType.reply:
+            original = await ctx.fetch_message(ctx.message.reference.message_id)
+            if original.author in ctx.message.mentions:
+                mentions.replied_user = True
+            await original.reply(tag.content, allowed_mentions=mentions)
+        else:
+            await ctx.send(tag.content, allowed_mentions=mentions)
 
     @tag_group.command(name="create")
     @app_commands.describe(name="The name for the tag", link="The message to turn into a tag")

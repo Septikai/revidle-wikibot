@@ -8,7 +8,7 @@ from discord import app_commands
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig
 from helpers.utils import stable_bot_check
-from helpers.views import SearchResultsView, PaginatedSearchView
+from helpers.views import PaginatedSearchView
 
 class Wiki(commands.Cog):
     """Wiki commands and listeners."""
@@ -142,15 +142,11 @@ class Wiki(commands.Cog):
             await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                             allowed_mentions=discord.AllowedMentions.none())
             return
-        view = SearchResultsView(results, author=ctx.author)
-        result_str = "\n".join([f"- {result}" for result in results]).replace("_", r"\_")
-        view.message = await ctx.reply(f"Found:\n{result_str}", view=view, mention_author=False, ephemeral=True,
-                                       allowed_mentions=discord.AllowedMentions.none())
-        await view.wait()
-        if view.result is None:
-            return
-        result = self.bot.wiki.page_or_section_search(view.result)
-        await ctx.reply(result, allowed_mentions=discord.AllowedMentions.none())
+        constants: ConstantsConfig = self.bot.configs["constants"]
+        links = {result: f"{constants.wiki_base_url}wiki/{result.replace(' ', '_')}" for result in results}
+        result_str = "\n".join([f"- [{formatted}](<{link}>)" for formatted, link in links.items()])
+        await ctx.reply(f"Found:\n{result_str}\n-# Not what you're looking for? Try `advsearch` instead!",
+                        mention_author=True, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
