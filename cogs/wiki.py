@@ -171,7 +171,11 @@ class Wiki(commands.Cog):
             await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
                             allowed_mentions=discord.AllowedMentions.none())
             return
-        view = PaginatedSearchView(results, author=ctx.author)
+        
+        constants: ConstantsConfig = self.bot.configs["constants"]
+        wiki_base_url = constants.wiki_base_url
+
+        view = PaginatedSearchView(results, wiki_base_url=wiki_base_url, author=ctx.author)
         view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True,
                                        allowed_mentions=discord.AllowedMentions.none())
         await view.wait()

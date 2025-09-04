@@ -5,7 +5,6 @@ import discord
 from helpers.modals import FeedbackModal
 from helpers.wiki_lib_patch import SearchResult
 
-
 class SearchResultsDropdown(discord.ui.Select):
     def __init__(self, results: List[str]):
         options = [discord.SelectOption(label=result) for result in results]
@@ -94,14 +93,17 @@ class PaginationView(BaseView):
 
 
 class PaginatedSearchView(SearchResultsView, PaginationView):
-    def __init__(self, results: List[SearchResult], *args, **kwargs):
+    def __init__(self, results: List[SearchResult], wiki_base_url: str, *args, **kwargs):
         self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
         self.results = results
         self.result_list = []
+        self.wiki_base_url = wiki_base_url
         for sr in results:
-            section = f"\n-# (section {sr.sectionsnippet})" if sr.sectionsnippet else ""
+            link = f"{wiki_base_url}wiki/{sr.title.replace(' ', '_')}"
+            link_embed = f"[{sr.title}](<{link}>)"
+            section = f"-# (section {sr.sectionsnippet})" if sr.sectionsnippet else ""
             snippet = f"{sr.snippet}..." if sr.snippet else "*No snippet available*"
-            self.result_list.append(f"## {sr.title}{section}\n{snippet}")
+            self.result_list.append(f"## {link_embed}\n{section}\n{snippet}")
         # pages = ["\n\n".join(self.result_list[z:z + 5] if z + 5 <= len(results) else self.result_list[z:len(results)])
         #          for z in range(0, len(results), 5)]
 
