@@ -79,7 +79,6 @@ class PaginationView(BaseView):
 class PaginatedSearchView(PaginationView):
     def __init__(self, results: List[SearchResult], wiki_base_url: str, *args, **kwargs):
         self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
-        self.results = results
         self.result_list = []
         self.wiki_base_url = wiki_base_url
         for sr in results:
