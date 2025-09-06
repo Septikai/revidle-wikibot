@@ -139,8 +139,8 @@ class Wiki(commands.Cog):
         async with ctx.typing():
             results = self.bot.wiki.search(query)
         if len(results) == 0:
-            await ctx.reply(f"No results found for: {query}", mention_author=False, ephemeral=True,
-                            allowed_mentions=discord.AllowedMentions.none())
+            await ctx.reply(f"No results found for: {query}\n-# Not what you expected? Try `advsearch` instead!",
+                            mention_author=False, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
             return
         constants: ConstantsConfig = self.bot.configs["constants"]
         links = {result: f"{constants.wiki_base_url}wiki/{result.replace(' ', '_')}" for result in results}
