@@ -457,8 +457,8 @@ class Util(commands.Cog):
             thumbnail = discord.File("assets/bug_64.png" if feedback_type == "Bug Report" else "assets/bot_64.png",
                                      "thumbnail.png")
             embed.set_thumbnail(url=f"attachment://thumbnail.png")
-            await channel.send(embed=embed, file=thumbnail)
-            message = await feedback_view.feedback_modal.response.send_message("Feedback submitted! Thank you for "
+            message = await channel.send(embed=embed, file=thumbnail)
+            await feedback_view.feedback_modal.response.send_message("Feedback submitted! Thank you for "
                                                                                "taking the time to help improve the bot"
                                                                                " :)", ephemeral=True)
             await message.pin()
