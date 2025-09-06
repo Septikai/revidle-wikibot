@@ -34,22 +34,6 @@ class BaseView(discord.ui.View):
         return True
 
 
-class SearchResultsView(BaseView):
-    def __init__(self, results: List[str], *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.dropdown = SearchResultsDropdown(results)
-        self.add_item(self.dropdown)
-        self.result = None
-
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if len(self.dropdown.values) == 0:
-            return await interaction.response.send_message("Please select an option.", ephemeral=True)
-        await interaction.response.defer()
-        self.result = self.dropdown.values[0]
-        self.stop()
-
-
 class PaginationView(BaseView):
     def __init__(self, pages: List[Union[discord.Embed, str]], *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -92,7 +76,7 @@ class PaginationView(BaseView):
         await interaction.response.defer()
 
 
-class PaginatedSearchView(SearchResultsView, PaginationView):
+class PaginatedSearchView(PaginationView):
     def __init__(self, results: List[SearchResult], wiki_base_url: str, *args, **kwargs):
         self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
         self.results = results
@@ -122,13 +106,8 @@ class PaginatedSearchView(SearchResultsView, PaginationView):
 
     async def update(self, *args, **kwargs):
         if "view" in kwargs.keys() and kwargs["view"] is None:
-            return await super().update(*args, **kwargs)
-        self.remove_item(self.dropdown)
-        # TODO: This is really cursed, maybe expand into a for loop?
-        self.dropdown = SearchResultsDropdown(
-            [result.title for result in (self.results[self.current_page*self.RESULTS_PER_PAGE:(self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE if
-             self.current_page*self.RESULTS_PER_PAGE + self.RESULTS_PER_PAGE < len(self.results) else len(self.results))])])
-        self.add_item(self.dropdown)
+            await super().update(*args, **kwargs)
+            return
         await super().update(view=self, *args, **kwargs)
 
 
