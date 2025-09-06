@@ -440,7 +440,7 @@ class Util(commands.Cog):
         await ctx.reply(content="This form allows you to submit feedback for the Revolution Idle Wiki Bot.\nPlease only"
                                 " use this for suggestions and bug reports. Abusing this form will result in being "
                                 "blacklisted from accessing it.", view=feedback_view, ephemeral=True)
-        await feedback_view.wait()
+        await feedback_view.feedback_modal.wait()
         if feedback_view.feedback_modal.response is not None:
             # Send Feedback
             constants_config: ConstantsConfig = self.bot.configs["constants"]
