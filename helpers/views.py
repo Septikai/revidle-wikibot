@@ -102,7 +102,7 @@ class PaginatedSearchView(PaginationView):
             footer = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             pages.append(f"{header}\n{body}\n{footer}")
 
-        super().__init__([sr.title for sr in results][:self.RESULTS_PER_PAGE], pages, *args, **kwargs)
+        super().__init__(pages, *args, **kwargs)
 
     async def update(self, *args, **kwargs):
         if "view" in kwargs.keys() and kwargs["view"] is None:
