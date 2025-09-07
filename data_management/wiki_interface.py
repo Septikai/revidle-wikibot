@@ -1,10 +1,12 @@
-from typing import List
+from typing import List, Tuple, Optional
 
 import mediawiki
 from mediawiki import MediaWikiPage
 
 from helpers.wiki_lib_patch import PatchedMediaWiki, SearchResult
 
+# import logging
+# logger = logging.getLogger(__name__)
 
 class WikiInterface:
     def __init__(self, user_agent, max_query_len, wiki_base_url):
@@ -18,7 +20,7 @@ class WikiInterface:
         :returns: the page requested."""
         return self.wiki.page(page_id, auto_suggest=False)
 
-    def search(self, text: str, limit=10) -> List[str]:
+    def search(self, text: str, limit=10) -> List[Tuple[str, Optional[str]]]:
         """Search the wiki pages.
 
         Will return the search results, not pages.
@@ -27,17 +29,29 @@ class WikiInterface:
 
         :param text: the page to search for.
         :param limit: the number of results to return.
-        :returns: a list of search results."""
-        results = self.wiki.search(text[:self.max_query_len], results=limit)
-        if text in results:
-            return results
-        section_results = [result for result in results if text.lower() in result.lower()]
-        for result in results:
-            section_results.extend(self.section_search(self.to_page(result), text))
-            if len(section_results) >= limit:
+        :returns: a list of (title, section) tuples."""
+        titles = self.wiki.search(text[:self.max_query_len], results=limit)
+        
+        results = [(title, None) for title in titles if text.lower() in title.lower()] 
+        for title in titles:
+            results.extend(self.section_search(self.to_page(title), text))
+            if len(results) >= limit:
                 break
-        return section_results[:limit]
+        # logger.warning(results[:limit])
+        return results[:limit]
 
+    def section_search(self, page: MediaWikiPage, text: str) -> List[Tuple[str, str]]:
+        """Searches a page for a specific section.
+
+        :param page: the page to search.
+        :param text: the section to search for on the page.
+        :returns: a list of (title, section) tuples`."""
+        # TODO: find a better way to detect a page with no sections
+        try:
+            return [(page.title, section) for section in page.sections if text.lower() in section.lower()]
+        except IndexError:
+            return []
+    
     def page_search(self, text: str, exact: bool = False) -> MediaWikiPage:
         """Searches for a page to return.
 
@@ -45,7 +59,7 @@ class WikiInterface:
 
         :param text: the page to search for.
         :param exact: when enabled, will only search for an exact match and not search for pages with related content.
-        :returns: the page requested."""
+        :returns: MediaWikiPage object of the page requested."""
         page = None
         try:
             page = self.to_page(text)
@@ -56,18 +70,6 @@ class WikiInterface:
             page.summarize()
         finally:
             return page
-
-    def section_search(self, page: MediaWikiPage, text: str) -> List[str]:
-        """Searches a page for a specific section.
-
-        :param page: the page to search.
-        :param text: the section to search for on the page.
-        :returns: a list of result strings in the format `Page#Section`."""
-        # TODO: find a better way to detect a page with no sections
-        try:
-            return [f"{page.title}#{section.replace(' ', '_')}" for section in page.sections if text.lower() in section.lower()]
-        except IndexError:
-            return []
 
     def page_or_section_search(self, text: str) -> str:
         """Searches for a page or section matching the provided text.
