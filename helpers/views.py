@@ -76,7 +76,7 @@ class PaginationView(BaseView):
         await interaction.response.defer()
 
 
-class PaginatedSearchView(PaginationView):
+class AdvancedSearchView(PaginationView):
     def __init__(self, results: List[SearchResult], wiki_base_url: str, *args, **kwargs):
         self.RESULTS_PER_PAGE = 5 # NOTE: Can break discord's character limit if set too high
         self.result_list = []
@@ -98,10 +98,10 @@ class PaginatedSearchView(PaginationView):
             end = min(i + self.RESULTS_PER_PAGE, total)
             header = f"**{total}** results found. Showing **{start}–{end}** of **{total}**\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             body = "\n\n".join(self.result_list[i:end])
-            footer = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            footer = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n-# Want a more concise list? Try `search` instead!"
             pages.append(f"{header}\n{body}\n{footer}")
 
-        super().__init__(pages, *args, **kwargs)
+        super().__init__(pages, timeout=120, *args, **kwargs)
 
     async def update(self, *args, **kwargs):
         if "view" in kwargs.keys() and kwargs["view"] is None:

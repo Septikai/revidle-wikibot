@@ -8,7 +8,7 @@ from discord import app_commands
 from bot import DiscordBot
 from data_management.data_protocols import ConstantsConfig
 from helpers.utils import stable_bot_check
-from helpers.views import PaginatedSearchView
+from helpers.views import AdvancedSearchView
 
 class Wiki(commands.Cog):
     """Wiki commands and listeners."""
@@ -139,19 +139,20 @@ class Wiki(commands.Cog):
         async with ctx.typing():
             results = self.bot.wiki.search(query)
         if len(results) == 0:
-            await ctx.reply(f"No results found for: {query}\n-# Not what you expected? Try `-advsearch {query}` instead!",
+            await ctx.reply(f"No results found for: {query}\n-# Not what you expected? Try `advsearch` instead!",
                             mention_author=False, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
             return
         constants: ConstantsConfig = self.bot.configs["constants"]
 
         result_str = "\n".join(
-            f"- [{title} § {section}](<{constants.wiki_base_url}wiki/{title.replace(' ', '_')}#{section.replace(' ', '_')}>)" if section is not None
+            f"- [{title} § {section}](<{constants.wiki_base_url}wiki/{title.replace(' ', '_')}#"
+            f"{section.replace(' ', '_')}>)" if section is not None
             else f"- [{title}](<{constants.wiki_base_url}wiki/{title.replace(' ', '_')}>)"
             for title, section in results
         )
 
-        await ctx.reply(f"Found:\n{result_str}\n-# Not what you're looking for? Try `-advsearch {query}` instead!",
-            mention_author=True, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.reply(f"Found:\n{result_str}\n-# Not what you're looking for? Try `advsearch` instead!",
+                        mention_author=True, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.hybrid_command(name="advsearch", aliases=["advancedsearch"])
     @app_commands.describe(query="The query to search for")
@@ -180,15 +181,9 @@ class Wiki(commands.Cog):
         constants: ConstantsConfig = self.bot.configs["constants"]
         wiki_base_url = constants.wiki_base_url
 
-        view = PaginatedSearchView(results, wiki_base_url=wiki_base_url, author=ctx.author)
+        view = AdvancedSearchView(results, wiki_base_url=wiki_base_url, author=ctx.author)
         view.message = await ctx.reply(view.pages[0], view=view, mention_author=False, ephemeral=True,
                                        allowed_mentions=discord.AllowedMentions.none())
-        await view.wait()
-        # Removing bot reply cuz we use embeds for links now
-        # if view.result is None:
-        #     return
-        # result = self.bot.wiki.page_search(view.result)
-        # await ctx.reply(result.url, ephemeral=True, allowed_mentions=discord.AllowedMentions.none())
 
 
 async def setup(bot: DiscordBot):

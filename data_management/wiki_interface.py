@@ -37,7 +37,7 @@ class WikiInterface:
             results.extend(self.section_search(self.to_page(title), text))
             if len(results) >= limit:
                 break
-        # logger.warning(results[:limit])
+        # logger.info(results[:limit])
         return results[:limit]
 
     def section_search(self, page: MediaWikiPage, text: str) -> List[Tuple[str, str]]:
